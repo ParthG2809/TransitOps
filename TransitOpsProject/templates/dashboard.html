@@ -4,31 +4,36 @@
 
 {% block content %}
 <div class="space-y-6">
-    
+
     <!-- Top Greeting and Filter Ribbon -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
             <h1 class="font-poppins text-2xl md:text-3xl font-bold tracking-tight">Ops Terminal</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Hello, <span class="font-semibold text-slate-800 dark:text-slate-200">{{ user_name }}</span>. Viewing dashboard compiled for role: <span class="font-bold text-brand uppercase">{{ current_role }}</span>.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Hello, <span
+                    class="font-semibold text-slate-800 dark:text-slate-200">{{ user_name }}</span>. Viewing dashboard
+                compiled for role: <span class="font-bold text-brand uppercase">{{ current_role }}</span>.</p>
         </div>
-        
+
         <!-- Filters (Admin / Fleet Manager / Financial Analyst only) -->
         {% if current_role == 'Admin' or current_role == 'Fleet Manager' or current_role == 'Financial Analyst' %}
         <form method="GET" class="flex flex-wrap items-center gap-2">
-            <select name="vehicle_type" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand">
+            <select name="vehicle_type" onchange="this.form.submit()"
+                class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand">
                 <option value="">All Vehicle Types</option>
                 {% for vt in vehicle_types %}
-                    <option value="{{ vt }}" {% if vt == sel_vehicle_type %}selected{% endif %}>{{ vt }}</option>
+                <option value="{{ vt }}" {% if vt==sel_vehicle_type %}selected{% endif %}>{{ vt }}</option>
                 {% endfor %}
             </select>
-            <select name="status" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand">
+            <select name="status" onchange="this.form.submit()"
+                class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand">
                 <option value="">All Statuses</option>
                 {% for st in statuses %}
-                    <option value="{{ st }}" {% if st == sel_status %}selected{% endif %}>{{ st }}</option>
+                <option value="{{ st }}" {% if st==sel_status %}selected{% endif %}>{{ st }}</option>
                 {% endfor %}
             </select>
             {% if sel_vehicle_type or sel_status %}
-            <a href="{% url 'dashboard' %}" class="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 p-2 text-xs font-semibold">Reset</a>
+            <a href="{% url 'dashboard' %}"
+                class="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 p-2 text-xs font-semibold">Reset</a>
             {% endif %}
         </form>
         {% endif %}
@@ -36,14 +41,20 @@
 
     <!-- 1. KPI CARDS GRID -->
     <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         <!-- KPI 1: Active Vehicles -->
         {% if current_role != 'Driver' and current_role != 'Financial Analyst' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Fleet</span>
                 <span class="p-2 rounded-xl bg-brand/10 text-brand group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16V10a2 2 0 00-2-2h-3.5L13 6h-3"/></svg>
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16V10a2 2 0 00-2-2h-3.5L13 6h-3" />
+                    </svg>
                 </span>
             </div>
             <div class="mt-4">
@@ -55,11 +66,15 @@
 
         <!-- KPI 2: Vehicles in Maintenance -->
         {% if current_role == 'Admin' or current_role == 'Fleet Manager' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">In Maintenance</span>
                 <span class="p-2 rounded-xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    </svg>
                 </span>
             </div>
             <div class="mt-4">
@@ -71,11 +86,15 @@
 
         <!-- KPI 3: Drivers On Duty -->
         {% if current_role == 'Admin' or current_role == 'Safety Officer' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Drivers Active</span>
                 <span class="p-2 rounded-xl bg-blue-500/10 text-blue-500 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857"/></svg>
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857" />
+                    </svg>
                 </span>
             </div>
             <div class="mt-4">
@@ -87,11 +106,16 @@
 
         <!-- KPI 4: Pending / Active Trips -->
         {% if current_role == 'Admin' or current_role == 'Fleet Manager' or current_role == 'Driver' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Dispatches</span>
-                <span class="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                <span
+                    class="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
                 </span>
             </div>
             <div class="mt-4">
@@ -103,11 +127,15 @@
 
         <!-- KPI 5: Fleet Utilization (Admin / Fleet Manager) -->
         {% if current_role == 'Admin' or current_role == 'Fleet Manager' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fleet Utilization</span>
-                <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span
+                    class="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
                 </span>
             </div>
             <div class="mt-4">
@@ -124,15 +152,20 @@
 
         <!-- KPI 6: Operational Cost (Admin / Financial Analyst) -->
         {% if current_role == 'Admin' or current_role == 'Financial Analyst' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Monthly OpEx</span>
                 <span class="p-2 rounded-xl bg-teal-500/10 text-teal-500 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </span>
             </div>
             <div class="mt-4">
-                <span class="text-2xl md:text-3xl font-bold font-poppins">${{ operational_cost|stringformat:".2f" }}</span>
+                <span class="text-2xl md:text-3xl font-bold font-poppins">${{ operational_cost|stringformat:".2f"
+                    }}</span>
                 <span class="text-xs text-slate-400 block mt-1">Fuel, Parts, and workshop</span>
             </div>
         </div>
@@ -140,7 +173,8 @@
 
         <!-- Driver Specific KPI Profile score (Driver only) -->
         {% if current_role == 'Driver' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">My Safety Score</span>
                 <span class="p-2 rounded-xl bg-green-500/10 text-green-500">98/100</span>
@@ -154,7 +188,8 @@
 
         <!-- Safety Compliance Rating (Safety Officer only) -->
         {% if current_role == 'Safety Officer' %}
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm hover:shadow-md transition-all group">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Safety Incidents</span>
                 <span class="p-2 rounded-xl bg-green-500/10 text-green-500">0</span>
@@ -169,82 +204,115 @@
     </div>
 
     <!-- 2. QUICK ACTIONS & ROLE DESK PANELS -->
-    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900/10 dark:bg-slate-900/20 p-4 md:p-6">
+    <div
+        class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900/10 dark:bg-slate-900/20 p-4 md:p-6">
         <h2 class="font-poppins text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Quick Desk Actions</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            
+
             {% if 'fleet' in allowed_routes %}
-            <a href="{% url 'vehicles' %}?action=open_create" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
+            <a href="{% url 'vehicles' %}?action=open_create"
+                class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
                 <span class="p-2 rounded-lg bg-brand/10 text-brand mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
                 </span>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Add Vehicle</span>
             </a>
             {% endif %}
 
             {% if 'drivers' in allowed_routes %}
-            <a href="{% url 'drivers' %}?action=open_create" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
-                <span class="p-2 rounded-lg bg-blue-500/10 text-blue-500 mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            <a href="{% url 'drivers' %}?action=open_create"
+                class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
+                <span
+                    class="p-2 rounded-lg bg-blue-500/10 text-blue-500 mb-2 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
                 </span>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Add Driver</span>
             </a>
             {% endif %}
 
             {% if 'trips' in allowed_routes %}
-            <a href="{% url 'trips' %}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
-                <span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            <a href="{% url 'trips' %}"
+                class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
+                <span
+                    class="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 mb-2 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
                 </span>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Dispatch Trip</span>
             </a>
             {% endif %}
 
             {% if 'maintenance' in allowed_routes %}
-            <a href="{% url 'maintenance' %}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
-                <span class="p-2 rounded-lg bg-amber-500/10 text-amber-500 mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572"/></svg>
+            <a href="{% url 'maintenance' %}"
+                class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
+                <span
+                    class="p-2 rounded-lg bg-amber-500/10 text-amber-500 mb-2 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572" />
+                    </svg>
                 </span>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Request Repair</span>
             </a>
             {% endif %}
 
             {% if 'expenses' in allowed_routes %}
-            <a href="{% url 'expenses' %}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
-                <span class="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <a href="{% url 'expenses' %}"
+                class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
+                <span
+                    class="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 mb-2 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
                 </span>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Log Fuel & Cost</span>
             </a>
             {% endif %}
 
             {% if 'analytics' in allowed_routes %}
-            <a href="{% url 'analytics' %}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
-                <span class="p-2 rounded-lg bg-teal-500/10 text-teal-500 mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V15a2 2 0 01-2 2z"/></svg>
+            <a href="{% url 'analytics' %}"
+                class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand/40 hover:bg-slate-50 dark:hover:bg-slate-850 text-center transition-all group">
+                <span
+                    class="p-2 rounded-lg bg-teal-500/10 text-teal-500 mb-2 group-hover:scale-110 transition-transform">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V15a2 2 0 01-2 2z" />
+                    </svg>
                 </span>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Export Report</span>
             </a>
             {% endif %}
-            
+
         </div>
     </div>
 
     <!-- 3. CHARTS GRID (Show appropriate charts based on active role permissions) -->
     {% if current_role != 'Driver' %}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         <!-- Chart 1: Fleet Utilization / Monthly Expenses -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm">
-            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Fleet Utilization Efficiency</h3>
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm">
+            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Fleet Utilization
+                Efficiency</h3>
             <div class="relative h-64 w-full">
                 <canvas id="utilizationChart"></canvas>
             </div>
         </div>
 
         <!-- Chart 2: Vehicle Status Distribution -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm">
-            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Vehicle Status Distribution</h3>
+        <div
+            class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 md:p-6 shadow-sm">
+            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Vehicle Status
+                Distribution</h3>
             <div class="relative h-64 w-full flex items-center justify-center">
                 <canvas id="statusChart" class="max-w-[240px]"></canvas>
             </div>
@@ -253,15 +321,18 @@
     </div>
     {% endif %}
 
-    <!-- 4. RECENT TRIPS TABLE / LIST -->
-    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden">
+    <!-- 4. Recent Trip Table / LIST -->
+    <div
+        class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-slate-200">Active / Recent Operations Dispatch</h3>
+            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-slate-200">Active / Recent Operations
+                Dispatch</h3>
             {% if 'trips' in allowed_routes %}
-            <a href="{% url 'trips' %}" class="text-xs font-bold text-brand hover:text-brand-light transition-colors">View Dispatch Desk →</a>
+            <a href="{% url 'trips' %}"
+                class="text-xs font-bold text-brand hover:text-brand-light transition-colors">View Dispatch Desk →</a>
             {% endif %}
         </div>
-        
+
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
@@ -281,7 +352,11 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center space-x-2">
                                 <span class="font-bold text-slate-900 dark:text-white">{{ trip.source }}</span>
-                                <svg class="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                <svg class="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
                                 <span>{{ trip.destination }}</span>
                             </div>
                         </td>
@@ -300,7 +375,8 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">No active trips dispatched at this time.</td>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">No active trips dispatched at this
+                            time.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
