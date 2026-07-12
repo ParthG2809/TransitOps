@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management & RBAC | TransitOps ERP{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
+            <h1 class="font-poppins text-2xl font-bold tracking-tight">User Directory</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage system user profiles, assign operational roles, activate/deactivate accounts, and reset credentials.</p>
+        </div>
+        
+        <button onclick="openCreateModal()" class="inline-flex items-center rounded-xl bg-brand hover:bg-brand-dark text-slate-950 font-bold px-4 py-2.5 text-xs transition-colors shadow-md shadow-brand/10">
+            <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add New User
+        </button>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm transition-colors">
+        <!-- Search and Filters Form -->
+        <form method="GET" class="flex flex-wrap items-center gap-2 flex-1 max-w-3xl">
+            <div class="relative w-64">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search name, username, or email..." 
+                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+            </div>
+            
+            <!-- Role Filter -->
+            <select name="role" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none">
+                <option value="">All Roles</option>
+                {% for r in all_roles %}
+                    <option value="{{ r }}" {% if r == role_filter %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Status Filter -->
+            <select name="status" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none">
+                <option value="">All Statuses</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+            
+            {% if q or role_filter or status_filter %}
+            <a href="{% url 'users' %}" class="text-xs text-slate-400 hover:text-slate-200 font-semibold px-2 transition-colors">Clear Filters</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Users Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for u in users %}
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+            <div>
+                <!-- Card Header -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
+                        {% if u.is_active %}bg-green-500/10 text-green-500{% else %}bg-slate-500/10 text-slate-500{% endif %}">
+                        {% if u.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        {{ u.department|default:"No Department" }}
+                    </span>
+                </div>
+
+                <!-- User Details -->
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="h-12 w-12 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand text-base font-extrabold">
+                        {{ u.name|slice:":2"|upper }}
+                    </div>
+                    <div>
+                        <h3 onclick="openUserDrawer({username: '{{ u.username|escapejs }}', name: '{{ u.name|escapejs }}', email: '{{ u.email|escapejs }}', role: '{{ u.role|escapejs }}', department: '{{ u.department|escapejs }}', phone: '{{ u.phone|escapejs }}', is_active: {% if u.is_active %}true{% else %}false{% endif %}})" 
+                            class="font-poppins text-sm font-bold text-slate-800 dark:text-white group-hover:text-brand cursor-pointer transition-colors leading-none">
+                            {{ u.name }}
+                        </h3>
+                        <p class="text-[10px] text-slate-400 mt-1">@{{ u.username }}</p>
+                    </div>
+                </div>
+
+                <!-- Role Details & Password Reset Indicator -->
+                <div class="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Assigned Role</span>
+                        <span class="font-bold text-slate-800 dark:text-slate-200">{{ u.role }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Email</span>
+                        <span class="text-slate-400">{{ u.email }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Temp Password Reset</span>
+                        <span class="font-bold {% if u.needs_password_change %}text-amber-500{% else %}text-green-500{% endif %}">
+                            {% if u.needs_password_change %}Required on Login{% else %}Completed{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Row -->
+            <div class="flex items-center justify-between border-t border-slate-105 dark:border-slate-800/80 mt-6 pt-4">
+                <div class="flex items-center space-x-2">
+                    <!-- Toggle Status (Activate / Deactivate) -->
+                    <form method="POST" action="{% url 'users' %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_status">
+                        <input type="hidden" name="username" value="{{ u.username }}">
+                        <button type="submit" class="text-xs font-bold {% if u.is_active %}text-amber-500 hover:text-amber-400{% else %}text-green-500 hover:text-green-400{% endif %} transition-colors">
+                            {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </button>
+                    </form>
+                    <span class="text-slate-650">•</span>
+                    <button onclick="openResetPasswordModal('{{ u.username }}')" class="text-xs font-bold text-brand hover:text-brand-light transition-colors">
+                        Reset Pass
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-1.5">
+                    <!-- Edit User -->
+                    <button onclick="openEditModal({username: '{{ u.username|escapejs }}', name: '{{ u.name|escapejs }}', email: '{{ u.email|escapejs }}', role: '{{ u.role|escapejs }}', department: '{{ u.department|escapejs }}', phone: '{{ u.phone|escapejs }}', is_active: {% if u.is_active %}true{% else %}false{% endif %}})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded hover:bg-blue-500/5 transition-colors" title="Edit User">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <!-- Delete User -->
+                    <button onclick="triggerDeleteUser('{{ u.username }}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded hover:bg-red-500/5 transition-colors" title="Delete User">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-12 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+            No system user profiles found matching filters.
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- 1. CREATE USER MODAL -->
+<div id="create-user-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeCreateModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Create Enterprise User</h3>
+        
+        <form method="POST" action="{% url 'users' %}" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300" id="create-user-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Full Name</label>
+                    <input type="text" name="name" required placeholder="Johnathon Doe" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Username (Unique)</label>
+                    <input type="text" name="username" required placeholder="johndoe" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Work Email</label>
+                    <input type="email" name="email" required placeholder="john@transitops.com" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Phone Number</label>
+                    <input type="text" name="phone" required placeholder="+1 (555) 0122" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Assign Role</label>
+                    <select name="role" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                        {% for r in all_roles %}
+                        <option value="{{ r }}">{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Department (Optional)</label>
+                    <input type="text" name="department" placeholder="Logistics" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Temporary Password</label>
+                    <input type="password" name="password" id="create-password" required placeholder="••••••••" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Confirm Password</label>
+                    <input type="password" name="confirm_password" id="create-confirm-password" required placeholder="••••••••" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="flex items-center">
+                <input type="checkbox" name="is_active" value="True" checked id="create-is-active" class="h-4 w-4 rounded border-slate-200 dark:border-slate-800 text-brand focus:ring-brand">
+                <label for="create-is-active" class="ml-2 text-slate-400">Active Status (User can log in immediately)</label>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeCreateModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2 hover:bg-brand-light transition-colors">Save User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. EDIT USER MODAL -->
+<div id="edit-user-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeEditModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Edit Enterprise User</h3>
+        
+        <form method="POST" action="{% url 'users' %}" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="username" id="edit-username">
+            
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Full Name</label>
+                <input type="text" name="name" id="edit-name" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Work Email</label>
+                    <input type="email" name="email" id="edit-email" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Phone Number</label>
+                    <input type="text" name="phone" id="edit-phone" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Assign Role</label>
+                    <select name="role" id="edit-role" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                        {% for r in all_roles %}
+                        <option value="{{ r }}">{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Department</label>
+                    <input type="text" name="department" id="edit-department" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="flex items-center">
+                <input type="checkbox" name="is_active" value="True" id="edit-is-active" class="h-4 w-4 rounded border-slate-200 dark:border-slate-800 text-brand focus:ring-brand">
+                <label for="edit-is-active" class="ml-2 text-slate-400">Active Status (User can log in)</label>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeEditModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2 hover:bg-brand-light transition-colors">Save User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. RESET PASSWORD MODAL -->
+<div id="reset-password-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeResetPasswordModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Reset Temporary Password</h3>
+        
+        <form method="POST" action="{% url 'users' %}" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300" id="reset-password-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset_password">
+            <input type="hidden" name="username" id="reset-username">
+            
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">New Temporary Password</label>
+                <input type="password" name="password" id="reset-pass" required placeholder="••••••••" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+            </div>
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Confirm Temporary Password</label>
+                <input type="password" name="confirm_password" id="reset-confirm" required placeholder="••••••••" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+            </div>
+
+            <p class="text-[10px] text-amber-500 font-medium">
+                Note: Resetting user password sets "needs_password_change = True" which prompts the user to change it on their next login session.
+            </p>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeResetPasswordModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2 hover:bg-brand-light transition-colors">Save Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. DELETE USER FORM -->
+<form id="delete-user-form" method="POST" action="{% url 'users' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="username" id="delete-username">
+</form>
+
+<!-- 5. USER PROFILE DOSSIER DRAWER -->
+<div id="user-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col justify-between">
+    <div class="overflow-y-auto pr-1">
+        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-4 mb-6">
+            <h3 class="font-poppins text-base font-bold text-slate-800 dark:text-white">User Access Dossier</h3>
+            <button onclick="closeUserDrawer()" class="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+
+        <div class="space-y-6 text-xs text-slate-500 dark:text-slate-400">
+            <!-- Profile Block -->
+            <div class="flex items-center space-x-4">
+                <div class="h-16 w-16 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand text-2xl font-extrabold" id="drawer-avatar">
+                    US
+                </div>
+                <div>
+                    <h4 id="drawer-name" class="text-base font-extrabold text-slate-900 dark:text-white leading-none">User Name</h4>
+                    <p id="drawer-username" class="text-xs text-slate-400 mt-1">@username</p>
+                    <p id="drawer-email" class="text-xs text-slate-400 mt-0.5">user@transitops.com</p>
+                </div>
+            </div>
+
+            <!-- Profile Info Grid -->
+            <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl">
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Assigned Role</span>
+                    <span id="drawer-role" class="font-extrabold text-sm text-slate-800 dark:text-white">Fleet Manager</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Department</span>
+                    <span id="drawer-dept" class="font-bold text-slate-800 dark:text-slate-200">Logistics</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Phone Contact</span>
+                    <span id="drawer-phone" class="font-bold text-slate-800 dark:text-slate-200">+1 (555) 0122</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">User Account Status</span>
+                    <span id="drawer-status" class="font-bold text-slate-800 dark:text-slate-200">Active</span>
+                </div>
+            </div>
+
+            <!-- Custom Audit logs placeholder -->
+            <div class="space-y-4">
+                <h5 class="font-poppins font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[10px] border-b border-slate-105 pb-1">RBAC Security Audit Trail</h5>
+                <ol class="relative border-l border-slate-200 dark:border-slate-800 space-y-4 ml-2">
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1.5 flex h-2.5 w-2.5 rounded-full bg-blue-500"></span>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">Today</span>
+                            <span class="text-[10px] text-slate-400">Security Check</span>
+                        </div>
+                        <p class="text-slate-400 mt-0.5">Authorization tokens reviewed. User role mapping confirmed active.</p>
+                    </li>
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1.5 flex h-2.5 w-2.5 rounded-full bg-green-500"></span>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">Yesterday</span>
+                            <span class="text-[10px] text-slate-400">System Log</span>
+                        </div>
+                        <p class="text-slate-400 mt-0.5">First terminal session verified. User profile generated by Admin console.</p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-4 border-t border-slate-150 dark:border-slate-800 mt-4">
+        <button onclick="closeUserDrawer()" class="w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold py-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Close dossier</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Create Modal
+    function openCreateModal() {
+        const modal = document.getElementById('create-user-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeCreateModal() {
+        const modal = document.getElementById('create-user-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Edit Modal
+    function openEditModal(userData) {
+        document.getElementById('edit-username').value = userData.username;
+        document.getElementById('edit-name').value = userData.name;
+        document.getElementById('edit-email').value = userData.email;
+        document.getElementById('edit-phone').value = userData.phone || '';
+        document.getElementById('edit-role').value = userData.role;
+        document.getElementById('edit-department').value = userData.department || '';
+        document.getElementById('edit-is-active').checked = userData.is_active;
+
+        const modal = document.getElementById('edit-user-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeEditModal() {
+        const modal = document.getElementById('edit-user-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Reset Password Modal
+    function openResetPasswordModal(username) {
+        document.getElementById('reset-username').value = username;
+        const modal = document.getElementById('reset-password-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeResetPasswordModal() {
+        const modal = document.getElementById('reset-password-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Delete User trigger
+    function triggerDeleteUser(username) {
+        if (confirm(`Are you sure you want to permanently delete user @${username}? This action is irreversible.`)) {
+            document.getElementById('delete-username').value = username;
+            document.getElementById('delete-user-form').submit();
+        }
+    }
+
+    // User Drawer dossier
+    function openUserDrawer(userData) {
+        document.getElementById('drawer-name').innerText = userData.name;
+        document.getElementById('drawer-username').innerText = '@' + userData.username;
+        document.getElementById('drawer-email').innerText = userData.email;
+        document.getElementById('drawer-role').innerText = userData.role;
+        document.getElementById('drawer-dept').innerText = userData.department || 'No Department';
+        document.getElementById('drawer-phone').innerText = userData.phone || 'No Contact';
+        document.getElementById('drawer-status').innerText = userData.is_active ? 'Active' : 'Inactive';
+        document.getElementById('drawer-avatar').innerText = userData.name.split(' ').map(x=>x[0]).join('').toUpperCase();
+
+        const drawer = document.getElementById('user-drawer');
+        drawer.classList.remove('translate-x-full');
+    }
+    function closeUserDrawer() {
+        document.getElementById('user-drawer').classList.add('translate-x-full');
+    }
+
+    // Custom Validation for Password match in create user
+    const createForm = document.getElementById('create-user-form');
+    const createPass = document.getElementById('create-password');
+    const createConfirm = document.getElementById('create-confirm-password');
+
+    createForm.addEventListener('submit', (e) => {
+        if (createPass.value !== createConfirm.value) {
+            e.preventDefault();
+            alert("Passwords do not match!");
+        } else if (createPass.value.length < 8) {
+            e.preventDefault();
+            alert("Password must be at least 8 characters long.");
+        }
+    });
+
+    // Custom Validation for Password match in reset password
+    const resetForm = document.getElementById('reset-password-form');
+    const resetPass = document.getElementById('reset-pass');
+    const resetConfirm = document.getElementById('reset-confirm');
+
+    resetForm.addEventListener('submit', (e) => {
+        if (resetPass.value !== resetConfirm.value) {
+            e.preventDefault();
+            alert("Passwords do not match!");
+        } else if (resetPass.value.length < 8) {
+            e.preventDefault();
+            alert("Password must be at least 8 characters long.");
+        }
+    });
+</script>
+{% endblock %}

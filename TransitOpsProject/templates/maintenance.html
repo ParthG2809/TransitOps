@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Workshop & Maintenance Logs | TransitOps ERP{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
+            <h1 class="font-poppins text-2xl font-bold tracking-tight">Workshop & Maintenance</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Schedule services, track active repairs, and calculate vehicle maintenance lifecycles.</p>
+        </div>
+        
+        <!-- Toggle quick repair dialog -->
+        <button onclick="openRequestModal()" class="inline-flex items-center rounded-xl bg-brand hover:bg-brand-dark text-slate-950 font-bold px-4 py-2.5 text-xs transition-colors shadow-md shadow-brand/10">
+            <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Log Maintenance Job
+        </button>
+    </div>
+
+    <!-- Maintenance Cost Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Card 1: Total Maintenance Spent -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-sm">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Maintenance OpEx</span>
+            <span class="text-2xl font-bold font-poppins mt-2 block">${{ total_maint_cost|stringformat:".2f" }}</span>
+            <span class="text-xs text-slate-400 mt-1 block">Accrued parts, labor, inspections</span>
+        </div>
+        
+        <!-- Card 2: Active Open Jobs -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-sm">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Open Work Orders</span>
+            <span class="text-2xl font-bold font-poppins text-brand mt-2 block">{{ open_jobs|length }}</span>
+            <span class="text-xs text-slate-400 mt-1 block">Vehicles currently in maintenance shop</span>
+        </div>
+
+        <!-- Card 3: Completed Services -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-sm">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Completed Services</span>
+            <span class="text-2xl font-bold font-poppins text-green-500 mt-2 block">{{ completed_jobs|length }}</span>
+            <span class="text-xs text-slate-400 mt-1 block">Inspections and routines signed off</span>
+        </div>
+    </div>
+
+    <!-- Active and History splits -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Active Open Work Orders (7 cols) -->
+        <div class="lg:col-span-8 space-y-6">
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                    <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-white">Active Shop Tickets (In Maintenance)</h3>
+                </div>
+                
+                <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for job in open_jobs %}
+                    <div class="p-6 flex flex-col md:flex-row md:items-center md:justify-between hover:bg-slate-50 dark:hover:bg-slate-850/20 transition-colors">
+                        <div class="space-y-2 max-w-xl text-xs">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-sm text-slate-900 dark:text-white">{{ job.vehicle }}</span>
+                                <span class="inline-flex rounded-lg px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-brand/10 text-brand">{{ job.type }}</span>
+                            </div>
+                            <p class="text-slate-400 font-medium">{{ job.description }}</p>
+                            <div class="text-[10px] text-slate-450 flex items-center space-x-3">
+                                <span>Ticket Date: {{ job.date }}</span>
+                                <span>•</span>
+                                <span class="font-bold text-slate-900 dark:text-slate-350">Estimated Cost: ${{ job.cost|stringformat:".2f" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 md:mt-0">
+                            <form method="POST" action="{% url 'maintenance' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="complete">
+                                <input type="hidden" name="id" value="{{ job.id }}">
+                                <button type="submit" class="rounded-xl bg-green-500 hover:bg-green-600 text-slate-950 font-bold px-3 py-1.5 text-[10px] transition-colors shadow-sm">
+                                    Signoff Repair
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-8 text-center text-slate-400">
+                        No open maintenance work orders active. Fleet operational.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Maintenance History Log (Complete history list) -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                    <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-white">Maintenance History Log</h3>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-wider">
+                                <th class="px-6 py-3.5">Asset</th>
+                                <th class="px-6 py-3.5">Category</th>
+                                <th class="px-6 py-3.5">Service Log Summary</th>
+                                <th class="px-6 py-3.5">Service Date</th>
+                                <th class="px-6 py-3.5">Cost</th>
+                                <th class="px-6 py-3.5 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                            {% for log in maintenance %}
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-colors">
+                                <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ log.vehicle }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide
+                                        {% if log.type == 'Routine' %}bg-blue-500/10 text-blue-500
+                                        {% elif log.type == 'Repair' %}bg-brand/10 text-brand
+                                        {% else %}bg-purple-500/10 text-purple-500{% endif %}">
+                                        {{ log.type }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-slate-400 max-w-xs truncate">{{ log.description }}</td>
+                                <td class="px-6 py-4 text-slate-400">{{ log.date }}</td>
+                                <td class="px-6 py-4 font-semibold">${{ log.cost|stringformat:".2f" }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide
+                                        {% if log.status == 'Completed' %}bg-green-500/10 text-green-500{% else %}bg-amber-500/10 text-amber-500{% endif %}">
+                                        {{ log.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% include 'partials/pagination.html' %}
+            </div>
+        </div>
+
+        <!-- Right Column: Workshop Compliance & Timeline (4 cols) -->
+        <div class="lg:col-span-4 space-y-6">
+            <!-- Inspection compliance tips -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-sm text-xs text-slate-500 dark:text-slate-400 space-y-4">
+                <h4 class="font-poppins text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">Workshop Alert Check</h4>
+                <div class="flex items-start space-x-3">
+                    <span class="p-1 rounded bg-green-500/10 text-green-500 shrink-0"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg></span>
+                    <p><span class="font-bold text-slate-800 dark:text-slate-200">Routine Checkups:</span> All utility rigs have had odometer inspections within the past 12,000 miles.</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <span class="p-1 rounded bg-brand/10 text-brand shrink-0"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></span>
+                    <p><span class="font-bold text-slate-800 dark:text-slate-200">Open Tickets:</span> 2 Heavy Duty trucks are currently flagged "In Shop" - capacity metrics are adjusted.</p>
+                </div>
+            </div>
+
+            <!-- Maintenance checklist timeline -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-sm text-xs text-slate-500 dark:text-slate-400">
+                <h4 class="font-poppins text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4">Workshop Workflow Steps</h4>
+                <ol class="relative border-l border-slate-200 dark:border-slate-800 space-y-4 ml-2">
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1 h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+                        <h5 class="font-bold text-slate-800 dark:text-slate-200">Step 1: File Log Ticket</h5>
+                        <p class="text-slate-400 mt-0.5">Asset status changes automatically to "In Shop" preventing dispatch.</p>
+                    </li>
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1 h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+                        <h5 class="font-bold text-slate-800 dark:text-slate-200">Step 2: Repair & Cost Estimate</h5>
+                        <p class="text-slate-400 mt-0.5">Mechanics allocate parts and labor values to log record.</p>
+                    </li>
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1 h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+                        <h5 class="font-bold text-slate-800 dark:text-slate-200">Step 3: Authorize & Complete</h5>
+                        <p class="text-slate-400 mt-0.5">Signoff releases vehicle back to "Available" status.</p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- LOG MAINTENANCE REQUEST MODAL -->
+<div id="request-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeRequestModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Request Workshop Maintenance</h3>
+        
+        <form method="POST" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Select Vehicle</label>
+                <select name="vehicle" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                    <option value="">Choose asset...</option>
+                    {% for v in vehicles %}
+                        {% if v.status != 'Retired' %}
+                            <option value="{{ v.name }} ({{ v.registration_number }})">{{ v.name }} [{{ v.registration_number }}]</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Maintenance Type</label>
+                    <select name="type" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        <option value="Routine">Routine Inspection</option>
+                        <option value="Repair">Repair Work</option>
+                        <option value="Inspection">Safety Verification</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Estimated Cost ($)</label>
+                    <input type="number" name="cost" step="0.01" required placeholder="500.00" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Job Scheduled Date</label>
+                <input type="date" name="date" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Job Description / Repair notes</label>
+                <textarea name="description" rows="3" required placeholder="Describe issue or inspection details..." class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeRequestModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2">Create Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRequestModal() {
+        const modal = document.getElementById('request-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    
+    function closeRequestModal() {
+        const modal = document.getElementById('request-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+</script>
+{% endblock %}

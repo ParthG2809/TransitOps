@@ -1,0 +1,110 @@
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 dark:border-slate-800 bg-slate-900 text-slate-300 md:static md:translate-x-0 transition-all duration-300 ease-in-out">
+    
+    <!-- Top Brand Logo & Header -->
+    <div class="flex h-16 items-center justify-between px-4 border-b border-slate-800 bg-slate-950/80">
+        <a href="{% url 'dashboard' %}" class="flex items-center space-x-2">
+            <!-- Sleek Orange Arrow Icon -->
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white shadow-md shadow-brand/20">
+                <svg class="h-6 w-6 transform rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+            </div>
+            <div id="brand-text" class="flex flex-col font-poppins transition-all duration-300">
+                <span class="text-sm font-bold tracking-wider text-white leading-3">TRANSIT<span class="text-brand">OPS</span></span>
+                <span class="text-[9px] font-semibold text-slate-500 uppercase tracking-widest mt-1">Smart Fleet ERP</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Navigation Menu Items (RBAC Enforced) -->
+    <nav class="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+        
+        <!-- DASHBOARD -->
+        {% if 'dashboard' in allowed_routes %}
+        <a href="{% url 'dashboard' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'dashboard' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Dashboard">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+            </svg>
+            <span class="sidebar-label">Dashboard</span>
+        </a>
+        {% endif %}
+
+        <!-- FLEET -->
+        {% if 'fleet' in allowed_routes %}
+        <a href="{% url 'vehicles' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'vehicles' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Fleet Registry">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16V10a2 2 0 00-2-2h-3.5L13 6h-3" />
+            </svg>
+            <span class="sidebar-label">Fleet Registry</span>
+        </a>
+        {% endif %}
+
+        <!-- DRIVERS -->
+        {% if 'drivers' in allowed_routes %}
+        <a href="{% url 'drivers' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'drivers' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Drivers Management">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span class="sidebar-label">Drivers</span>
+        </a>
+        {% endif %}
+
+        <!-- TRIPS -->
+        {% if 'trips' in allowed_routes %}
+        <a href="{% url 'trips' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'trips' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Trip Dispatcher">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            <span class="sidebar-label">Trip Dispatcher</span>
+        </a>
+        {% endif %}
+
+        <!-- MAINTENANCE -->
+        {% if 'maintenance' in allowed_routes %}
+        <a href="{% url 'maintenance' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'maintenance' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Maintenance Logs">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="sidebar-label">Maintenance</span>
+        </a>
+        {% endif %}
+
+        <!-- FUEL & EXPENSES -->
+        {% if 'expenses' in allowed_routes %}
+        <a href="{% url 'expenses' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'expenses' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Operational Costs">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="sidebar-label">Fuel & Expenses</span>
+        </a>
+        {% endif %}
+
+        <!-- ANALYTICS -->
+        {% if 'analytics' in allowed_routes %}
+        <a href="{% url 'analytics' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'analytics' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Reports & Charts">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span class="sidebar-label">Analytics</span>
+        </a>
+        {% endif %}
+
+        <!-- SETTINGS -->
+        {% if 'settings' in allowed_routes %}
+        <a href="{% url 'settings' %}" class="flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 {% if request.resolver_match.url_name == 'settings' %}bg-brand text-white shadow-md shadow-brand/20{% else %}hover:bg-slate-800 text-slate-400 hover:text-white{% endif %}" title="Settings & RBAC">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <span class="sidebar-label">Settings</span>
+        </a>
+        {% endif %}
+
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="border-t border-slate-850 p-4 bg-slate-950/40 text-center text-[10px] text-slate-500 font-medium">
+        <span class="sidebar-label">v1.2.0 • TransitOps Enterprise</span>
+    </div>
+</aside>

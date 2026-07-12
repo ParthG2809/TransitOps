@@ -1,0 +1,173 @@
+<header class="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md px-4 md:px-6 transition-colors">
+    <!-- Left: Hamburger toggle for mobile, title for context -->
+    <div class="flex items-center space-x-3">
+        <button id="mobile-sidebar-toggle" class="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 md:hidden focus:outline-none">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <button id="toggle-sidebar" class="hidden md:flex rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 focus:outline-none transition-colors">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
+            </svg>
+        </button>
+        
+        <!-- Live Role Badge on Navbar -->
+        <span class="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand ring-1 ring-inset ring-brand/20">
+            Active Workspace: {{ current_role }}
+        </span>
+    </div>
+
+    <!-- Center: Search Bar -->
+    <div class="hidden sm:flex max-w-md flex-1 px-4">
+        <form action="" method="GET" class="w-full relative">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg class="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <input type="text" name="q" value="{{ q|default:'' }}" placeholder="Search registry database..." 
+                   class="block w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 py-2 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand dark:focus:bg-slate-900 transition-all">
+        </form>
+    </div>
+
+    <!-- Right: Quick theme toggle, role switcher, notifications, and profile -->
+    <div class="flex items-center space-x-3 md:space-x-4">
+        
+        <!-- Quick Role Switcher for easy evaluation -->
+        <form action="{% url 'switch_role' %}" method="POST" class="hidden lg:flex items-center space-x-1">
+            {% csrf_token %}
+            <label for="role-select" class="text-xs text-slate-400 font-medium">Switch Sandbox Role:</label>
+            <select id="role-select" name="role" onchange="this.form.submit()" 
+                    class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs px-2 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand">
+                {% for r in all_roles %}
+                    <option value="{{ r }}" {% if r == current_role %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <!-- Theme Toggle Button -->
+        <a href="{% url 'toggle_theme' %}" class="rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Toggle Theme">
+            {% if theme == 'dark' %}
+                <!-- Sun Icon for switching to light mode -->
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m2.828 9.9a5 5 0 117.072 0l-7.072 0z" />
+                </svg>
+            {% else %}
+                <!-- Moon Icon for switching to dark mode -->
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            {% endif %}
+        </a>
+
+        <!-- Notifications Bell Dropdown -->
+        <div class="relative">
+            <button id="notif-btn" class="relative rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {% if expiry_warnings > 0 %}
+                    <span class="absolute top-1 right-1 flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                {% endif %}
+            </button>
+            <!-- Dropdown content (hidden by default) -->
+            <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 origin-top-right rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-lg ring-1 ring-black/5 focus:outline-none">
+                <div class="px-4 py-2 font-poppins text-xs font-semibold text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                    Notifications Panel
+                </div>
+                <div class="py-1 max-h-60 overflow-y-auto">
+                    {% if expiry_warnings > 0 %}
+                        <a href="{% url 'drivers' %}" class="flex items-start px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <span class="inline-flex items-center justify-center p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-500 mr-3 mt-0.5">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </span>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">License Expiry Alerts</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">{{ expiry_warnings }} driver(s) have licenses expiring soon or expired!</p>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="px-4 py-6 text-center text-xs text-slate-400">
+                            No critical alerts or warnings.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile Dropdown -->
+        <div class="relative">
+            <button id="profile-btn" class="flex items-center space-x-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/50 p-1 pr-3 focus:outline-none transition-colors">
+                <img class="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 object-cover" 
+                     src="{{ user_avatar|default:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256' }}" alt="User Avatar">
+                <div class="hidden md:block text-left">
+                    <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-3">{{ user_name }}</p>
+                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{{ current_role }}</span>
+                </div>
+            </button>
+            
+            <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-56 origin-top-right rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-lg ring-1 ring-black/5 focus:outline-none">
+                <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                    <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">{{ user_name }}</p>
+                    <p class="text-[10px] text-slate-400">ops@transitops.com</p>
+                </div>
+                <div class="py-1">
+                    <a href="{% url 'settings' %}" class="flex items-center px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+                        Settings & Profile
+                    </a>
+                    <!-- Mobile only Quick Switch inside dropdown -->
+                    <div class="lg:hidden border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
+                        <p class="px-4 py-1 text-[10px] font-semibold text-slate-400 uppercase">Change Role</p>
+                        {% for r in all_roles %}
+                            <form action="{% url 'switch_role' %}" method="POST" class="w-full">
+                                {% csrf_token %}
+                                <input type="hidden" name="role" value="{{ r }}">
+                                <button type="submit" class="w-full text-left px-4 py-1.5 text-xs {% if r == current_role %}text-brand font-semibold{% else %}text-slate-600 dark:text-slate-400{% endif %} hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg">
+                                    {{ r }}
+                                </button>
+                            </form>
+                        {% endfor %}
+                    </div>
+                    <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+                    <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    // Notifications toggle
+    const notifBtn = document.getElementById('notif-btn');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    if (notifBtn && notifDropdown) {
+        notifBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('hidden');
+            if (profileDropdown) profileDropdown.classList.add('hidden');
+        });
+    }
+
+    // Profile toggle
+    const profileBtn = document.getElementById('profile-btn');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+            if (notifDropdown) notifDropdown.classList.add('hidden');
+        });
+    }
+
+    // Click outside to close menus
+    document.addEventListener('click', () => {
+        if (notifDropdown) notifDropdown.classList.add('hidden');
+        if (profileDropdown) profileDropdown.classList.add('hidden');
+    });
+</script>

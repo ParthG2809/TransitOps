@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}Trip Dispatcher | TransitOps ERP{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div>
+        <h1 class="font-poppins text-2xl font-bold tracking-tight">Trip Dispatcher</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Plan routes, assign drivers, verify cargo capacities, and track ongoing dispatches.</p>
+    </div>
+
+    <!-- Dispatch Board Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Dispatch Creation Form (7 cols) -->
+        <div class="lg:col-span-7 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 shadow-sm flex flex-col justify-between">
+            <div>
+                <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">New Trip Dispatch</h3>
+                
+                <form id="dispatch-form" method="POST" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="dispatch">
+                    
+                    <!-- Route Fields -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block mb-1 text-slate-400 uppercase tracking-wider">Source Hub</label>
+                            <input type="text" name="source" id="route-source" required placeholder="Houston Depot" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-slate-400 uppercase tracking-wider">Destination</label>
+                            <input type="text" name="destination" id="route-dest" required placeholder="Dallas Distribution" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Vehicle & Driver Assignments -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block mb-1 text-slate-400 uppercase tracking-wider">Assign Available Vehicle</label>
+                            <select name="vehicle" id="vehicle-select" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                                <option value="">Select vehicle...</option>
+                                {% for v in available_vehicles %}
+                                    <option value="{{ v.name }} ({{ v.registration_number }})">{{ v.name }} [{{ v.registration_number }}]</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-slate-400 uppercase tracking-wider">Assign Active Driver</label>
+                            <select name="driver" id="driver-select" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                                <option value="">Select driver...</option>
+                                {% for d in available_drivers %}
+                                    <option value="{{ d.name }}">{{ d.name }} (Safety Score: {{ d.safety_score }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Cargo and Distance -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cargo Weight (kg)</label>
+                            <input type="number" name="cargo_weight" id="cargo-weight" required placeholder="24000" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-slate-400 uppercase tracking-wider">Estimated Distance (km)</label>
+                            <input type="number" name="distance" id="distance" required placeholder="240.5" step="0.1" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Dynamic compliance checks -->
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <!-- CDL Verification Card -->
+                    <div id="check-cdl" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center">
+                        <span class="block text-[10px] text-slate-400 uppercase font-bold">CDL License</span>
+                        <span id="cdl-status" class="inline-block mt-1 text-[10px] font-bold text-slate-400">NOT VERIFIED</span>
+                    </div>
+                    <!-- Weight Limits Card -->
+                    <div id="check-weight" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center">
+                        <span class="block text-[10px] text-slate-400 uppercase font-bold">Cargo Weight</span>
+                        <span id="weight-status" class="inline-block mt-1 text-[10px] font-bold text-slate-400">NOT VERIFIED</span>
+                    </div>
+                    <!-- Driver Score Check -->
+                    <div id="check-safety" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center">
+                        <span class="block text-[10px] text-slate-400 uppercase font-bold">Driver Rest</span>
+                        <span id="safety-status" class="inline-block mt-1 text-[10px] font-bold text-slate-400">NOT VERIFIED</span>
+                    </div>
+                </div>
+
+                <button type="submit" form="dispatch-form" class="w-full rounded-xl bg-brand text-slate-950 font-bold py-3 hover:bg-brand-dark transition-all transform active:scale-95 shadow-md shadow-brand/10">
+                    Authorize Route Dispatch
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Animated Route Preview Placeholder (5 cols) -->
+        <div class="lg:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900 text-white p-6 shadow-sm flex flex-col justify-between overflow-hidden relative min-h-[300px]">
+            <!-- Graphic map backdrop grid -->
+            <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[size:16px_16px]"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2 mb-4">
+                    <h3 class="font-poppins text-xs font-bold text-white uppercase tracking-wider">Live Route Preview</h3>
+                    <span class="text-[10px] text-brand uppercase font-extrabold tracking-widest animate-pulse flex items-center">
+                        <span class="h-1.5 w-1.5 rounded-full bg-brand mr-1"></span> GPS Ready
+                    </span>
+                </div>
+            </div>
+
+            <!-- Route Graph Drawing -->
+            <div class="relative z-10 my-4 flex items-center justify-center h-48 w-full">
+                <svg class="w-full h-full text-brand" viewBox="0 0 300 160">
+                    <!-- Dynamic pathway -->
+                    <path d="M 40 120 Q 150 20, 260 80" fill="none" stroke="#475569" stroke-width="4"/>
+                    <!-- Animated path dots -->
+                    <path d="M 40 120 Q 150 20, 260 80" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="10 100" stroke-dashoffset="0">
+                        <animate attributeName="stroke-dashoffset" values="110;0" dur="5s" repeatCount="indefinite"/>
+                    </path>
+                    
+                    <!-- Source Marker -->
+                    <g transform="translate(40,120)">
+                        <circle cx="0" cy="0" r="8" fill="#3B82F6" class="animate-ping opacity-75"/>
+                        <circle cx="0" cy="0" r="5" fill="#3B82F6"/>
+                        <text x="-15" y="-12" fill="#fff" font-size="8" font-weight="bold">Source</text>
+                    </g>
+                    <!-- Destination Marker -->
+                    <g transform="translate(260,80)">
+                        <circle cx="0" cy="0" r="5" fill="#10B981"/>
+                        <text x="-25" y="-12" fill="#fff" font-size="8" font-weight="bold">Destination</text>
+                    </g>
+                    
+                    <!-- Truck symbol moving -->
+                    <circle cx="0" cy="0" r="4" fill="#fbbf24">
+                        <animateMotion path="M 40 120 Q 150 20, 260 80" dur="8s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+            </div>
+
+            <div class="relative z-10 text-[10px] text-slate-400 bg-black/40 p-3 rounded-xl border border-white/5">
+                <span class="block font-bold text-white">Estimated Logistics SLA:</span>
+                <span id="route-sla">Please input route source and destination to calculate time intervals.</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 2. TRIP HISTORY TABLE -->
+    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden mt-6">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+            <h3 class="font-poppins text-sm font-bold text-slate-800 dark:text-white">Active Operational Manifest</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-wider">
+                        <th class="px-6 py-3.5">Manifest ID</th>
+                        <th class="px-6 py-3.5">Route</th>
+                        <th class="px-6 py-3.5">Vehicle</th>
+                        <th class="px-6 py-3.5">Driver</th>
+                        <th class="px-6 py-3.5">Cargo / Distance</th>
+                        <th class="px-6 py-3.5">Dispatched / Completed Time</th>
+                        <th class="px-6 py-3.5">Status</th>
+                        <th class="px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                    {% for trip in trips %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-colors">
+                        <td class="px-6 py-4 text-slate-450 font-semibold">#{{ trip.id }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-slate-900 dark:text-white">{{ trip.source }}</span>
+                                <svg class="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                <span>{{ trip.destination }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-400">{{ trip.vehicle }}</td>
+                        <td class="px-6 py-4 font-semibold">{{ trip.driver }}</td>
+                        <td class="px-6 py-4">
+                            <span class="block">{{ trip.cargo_weight }} kg</span>
+                            <span class="text-[10px] text-slate-400">{{ trip.distance }} km</span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-400">
+                            <span class="block">Disp: {{ trip.dispatched_time }}</span>
+                            {% if trip.completed_time %}
+                            <span class="text-[10px] text-green-500 font-semibold">Comp: {{ trip.completed_time }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
+                                {% if trip.status == 'Completed' %}bg-green-500/10 text-green-500
+                                {% elif trip.status == 'Dispatched' %}bg-blue-500/10 text-blue-500
+                                {% elif trip.status == 'Cancelled' %}bg-red-500/10 text-red-500
+                                {% else %}bg-slate-500/10 text-slate-500{% endif %}">
+                                {{ trip.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            {% if trip.status == 'Dispatched' %}
+                            <div class="flex items-center justify-end space-x-2">
+                                <form method="POST" action="{% url 'trips' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="complete">
+                                    <input type="hidden" name="id" value="{{ trip.id }}">
+                                    <button type="submit" class="text-xs text-green-500 font-bold hover:text-green-400 transition-colors px-2 py-1">Complete</button>
+                                </form>
+                                <form method="POST" action="{% url 'trips' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="cancel">
+                                    <input type="hidden" name="id" value="{{ trip.id }}">
+                                    <button type="submit" class="text-xs text-red-500 font-bold hover:text-red-400 transition-colors px-2 py-1">Cancel</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <span class="text-[10px] text-slate-400 font-semibold">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-8 text-center text-slate-400">No trips dispatched yet. Fill out the dispatch console.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'partials/pagination.html' %}
+    </div>
+
+</div>
+
+<script>
+    // Live validation triggers
+    const driverSelect = document.getElementById('driver-select');
+    const vehicleSelect = document.getElementById('vehicle-select');
+    const cargoInput = document.getElementById('cargo-weight');
+    const sourceInput = document.getElementById('route-source');
+    const destInput = document.getElementById('route-dest');
+
+    function updateComplianceChecks() {
+        // CDL Verification mock check
+        const cdlStatus = document.getElementById('cdl-status');
+        const cdlCard = document.getElementById('check-cdl');
+        if(driverSelect.value) {
+            cdlStatus.innerText = "VERIFIED VALID";
+            cdlStatus.className = "inline-block mt-1 text-[10px] font-bold text-green-500";
+            cdlCard.className = "p-3 rounded-xl border border-green-500/20 bg-green-500/10 text-center";
+        } else {
+            cdlStatus.innerText = "NOT VERIFIED";
+            cdlStatus.className = "inline-block mt-1 text-[10px] font-bold text-slate-400";
+            cdlCard.className = "p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center";
+        }
+
+        // Weight Limits mock check
+        const weightStatus = document.getElementById('weight-status');
+        const weightCard = document.getElementById('check-weight');
+        const cargoValue = parseFloat(cargoInput.value || 0);
+        if(cargoValue > 0) {
+            if(cargoValue > 35000) {
+                weightStatus.innerText = "OVERLOAD RISK";
+                weightStatus.className = "inline-block mt-1 text-[10px] font-bold text-red-500";
+                weightCard.className = "p-3 rounded-xl border border-red-500/20 bg-red-500/10 text-center";
+            } else {
+                weightStatus.innerText = "ACCEPTABLE";
+                weightStatus.className = "inline-block mt-1 text-[10px] font-bold text-green-500";
+                weightCard.className = "p-3 rounded-xl border border-green-500/20 bg-green-500/10 text-center";
+            }
+        } else {
+            weightStatus.innerText = "NOT VERIFIED";
+            weightStatus.className = "inline-block mt-1 text-[10px] font-bold text-slate-400";
+            weightCard.className = "p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center";
+        }
+
+        // Safety Rest period check
+        const safetyStatus = document.getElementById('safety-status');
+        const safetyCard = document.getElementById('check-safety');
+        if(driverSelect.value) {
+            safetyStatus.innerText = "REST COMPLIANT";
+            safetyStatus.className = "inline-block mt-1 text-[10px] font-bold text-green-500";
+            safetyCard.className = "p-3 rounded-xl border border-green-500/20 bg-green-500/10 text-center";
+        } else {
+            safetyStatus.innerText = "NOT VERIFIED";
+            safetyStatus.className = "inline-block mt-1 text-[10px] font-bold text-slate-400";
+            safetyCard.className = "p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center";
+        }
+
+        // SLA Preview updating
+        const routeSla = document.getElementById('route-sla');
+        if(sourceInput.value && destInput.value) {
+            routeSla.innerHTML = `<span class="font-extrabold text-white">Route Active:</span> ${sourceInput.value} to ${destInput.value}. Estimated transit time: <span class="font-bold text-brand">3h 45m</span>.`;
+        } else {
+            routeSla.innerText = "Please input route source and destination to calculate time intervals.";
+        }
+    }
+
+    driverSelect.addEventListener('change', updateComplianceChecks);
+    vehicleSelect.addEventListener('change', updateComplianceChecks);
+    cargoInput.addEventListener('input', updateComplianceChecks);
+    sourceInput.addEventListener('input', updateComplianceChecks);
+    destInput.addEventListener('input', updateComplianceChecks);
+</script>
+{% endblock %}

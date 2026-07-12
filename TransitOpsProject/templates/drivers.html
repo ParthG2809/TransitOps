@@ -1,0 +1,516 @@
+{% extends 'base.html' %}
+
+{% block title %}Drivers Management | TransitOps ERP{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Expiry Warnings Header -->
+    {% if expiry_warnings > 0 %}
+    <div class="p-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-500 text-xs font-semibold flex items-center space-x-3">
+        <svg class="h-5 w-5 shrink-0 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+            <span class="font-extrabold uppercase">Compliance Warning:</span> {{ expiry_warnings }} driver(s) have CDL license credentials expiring within 30 days or expired. Action required.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
+            <h1 class="font-poppins text-2xl font-bold tracking-tight">Driver Profiles</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage driver credentials, contact directories, and safety performance reviews.</p>
+        </div>
+        
+        <button onclick="openCreateModal()" class="inline-flex items-center rounded-xl bg-brand hover:bg-brand-dark text-slate-950 font-bold px-4 py-2.5 text-xs transition-colors shadow-md shadow-brand/10">
+            <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Driver Profile
+        </button>
+    </div>
+
+    <!-- Filter & View Switcher Bar -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm transition-colors">
+        <!-- Search and Status Filters -->
+        <form method="GET" class="flex flex-wrap items-center gap-2 flex-1 max-w-2xl">
+            <input type="hidden" name="view" value="{{ view_mode }}">
+            <div class="relative w-64">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search driver name or CDL ID..." 
+                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+            </div>
+            
+            <select name="status" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none">
+                <option value="">All Statuses</option>
+                {% for st in statuses %}
+                    <option value="{{ st }}" {% if st == status_filter %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+            </select>
+            
+            {% if q or status_filter %}
+            <a href="{% url 'drivers' %}?view={{ view_mode }}" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold px-2">Clear Filters</a>
+            {% endif %}
+        </form>
+
+        <!-- View Switcher -->
+        <div class="flex items-center space-x-1 rounded-xl p-1 bg-slate-100 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/50">
+            <a href="?view=table{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+               class="rounded-lg p-2 text-xs font-semibold flex items-center {% if view_mode == 'table' %}bg-brand text-slate-950{% else %}text-slate-400 hover:text-slate-200{% endif %}" title="Table View">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </a>
+            <a href="?view=cards{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+               class="rounded-lg p-2 text-xs font-semibold flex items-center {% if view_mode != 'table' %}bg-brand text-slate-950{% else %}text-slate-400 hover:text-slate-200{% endif %}" title="Cards View">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- 1. GRID CARDS VIEW -->
+    {% if view_mode != 'table' %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for d in drivers %}
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+            <div>
+                <!-- Top Header Row -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
+                        {% if d.status == 'Active' %}bg-green-500/10 text-green-500
+                        {% elif d.status == 'On Duty' %}bg-blue-500/10 text-blue-500
+                        {% else %}bg-red-500/10 text-red-500{% endif %}">
+                        {{ d.status }}
+                    </span>
+                    <span class="text-xs font-bold font-poppins text-slate-400">
+                        {{ d.license_category }}
+                    </span>
+                </div>
+
+                <!-- Driver Info Block -->
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="h-12 w-12 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand text-base font-extrabold">
+                        {{ d.name|slice:":2" }}
+                    </div>
+                    <div>
+                        <h3 onclick="openDriverDrawer({id: '{{ d.id }}', name: '{{ d.name }}', license_number: '{{ d.license_number }}', license_category: '{{ d.license_category }}', license_expiry: '{{ d.license_expiry }}', phone: '{{ d.phone }}', safety_score: {{ d.safety_score }}, status: '{{ d.status }}'})" 
+                            class="font-poppins text-sm font-bold text-slate-800 dark:text-white group-hover:text-brand cursor-pointer transition-colors leading-none">
+                            {{ d.name }}
+                        </h3>
+                        <p class="text-[10px] text-slate-400 mt-1">CDL: {{ d.license_number }}</p>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 gap-4 mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Safety Rating</span>
+                        <span class="font-bold {% if d.safety_score >= 90 %}text-green-500{% elif d.safety_score >= 80 %}text-amber-500{% else %}text-red-500{% endif %}">
+                            {{ d.safety_score }}/100
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Expiry Warning</span>
+                        <span class="font-bold text-slate-850 dark:text-slate-200 font-poppins">{{ d.license_expiry }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Row -->
+            <div class="flex items-center justify-between border-t border-slate-105 dark:border-slate-800/80 mt-6 pt-4">
+                <button onclick="openDriverDrawer({id: '{{ d.id }}', name: '{{ d.name }}', license_number: '{{ d.license_number }}', license_category: '{{ d.license_category }}', license_expiry: '{{ d.license_expiry }}', phone: '{{ d.phone }}', safety_score: {{ d.safety_score }}, status: '{{ d.status }}'})" class="text-xs font-bold text-brand hover:text-brand-light transition-colors">
+                    View Compliance
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openEditModal({id: '{{ d.id }}', name: '{{ d.name }}', license_number: '{{ d.license_number }}', license_category: '{{ d.license_category }}', license_expiry: '{{ d.license_expiry }}', phone: '{{ d.phone }}', safety_score: {{ d.safety_score }}, status: '{{ d.status }}'})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded hover:bg-blue-500/5 transition-colors">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    {% if d.status != 'Suspended' %}
+                    <button onclick="triggerSuspend({{ d.id }})" class="text-slate-400 hover:text-amber-500 p-1.5 rounded hover:bg-amber-500/5 transition-colors" title="Suspend Driver">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                    </button>
+                    {% endif %}
+                    <button onclick="triggerDelete({{ d.id }})" class="text-slate-400 hover:text-red-500 p-1.5 rounded hover:bg-red-500/5 transition-colors">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-12 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+            No driver profiles match active search query.
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- 2. ENTERPRISE DATA TABLE VIEW -->
+    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-wider">
+                        <th class="px-6 py-3.5">Name</th>
+                        <th class="px-6 py-3.5">CDL Credentials</th>
+                        <th class="px-6 py-3.5">License Expiry</th>
+                        <th class="px-6 py-3.5">Phone Contact</th>
+                        <th class="px-6 py-3.5">Safety Rating</th>
+                        <th class="px-6 py-3.5">Status</th>
+                        <th class="px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                    {% for d in drivers %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-colors">
+                        <td class="px-6 py-4">
+                            <span onclick="openDriverDrawer({id: '{{ d.id }}', name: '{{ d.name }}', license_number: '{{ d.license_number }}', license_category: '{{ d.license_category }}', license_expiry: '{{ d.license_expiry }}', phone: '{{ d.phone }}', safety_score: {{ d.safety_score }}, status: '{{ d.status }}'})"
+                                  class="font-bold text-slate-800 dark:text-slate-200 block text-xs cursor-pointer hover:text-brand">{{ d.name }}</span>
+                            <span class="text-[10px] text-slate-400">ID: #{{ d.id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="block">{{ d.license_number }}</span>
+                            <span class="text-[10px] text-slate-400">{{ d.license_category }}</span>
+                        </td>
+                        <td class="px-6 py-4 font-poppins">{{ d.license_expiry }}</td>
+                        <td class="px-6 py-4 text-slate-400">{{ d.phone }}</td>
+                        <td class="px-6 py-4">
+                            <span class="font-bold {% if d.safety_score >= 90 %}text-green-500{% elif d.safety_score >= 80 %}text-amber-500{% else %}text-red-500{% endif %}">
+                                {{ d.safety_score }}/100
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
+                                {% if d.status == 'Active' %}bg-green-500/10 text-green-500
+                                {% elif d.status == 'On Duty' %}bg-blue-500/10 text-blue-500
+                                {% else %}bg-red-500/10 text-red-500{% endif %}">
+                                {{ d.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end space-x-1.5">
+                                <button onclick="openDriverDrawer({id: '{{ d.id }}', name: '{{ d.name }}', license_number: '{{ d.license_number }}', license_category: '{{ d.license_category }}', license_expiry: '{{ d.license_expiry }}', phone: '{{ d.phone }}', safety_score: {{ d.safety_score }}, status: '{{ d.status }}'})" class="text-xs text-brand font-bold hover:text-brand-light transition-colors px-1.5 py-1">View</button>
+                                <button onclick="openEditModal({id: '{{ d.id }}', name: '{{ d.name }}', license_number: '{{ d.license_number }}', license_category: '{{ d.license_category }}', license_expiry: '{{ d.license_expiry }}', phone: '{{ d.phone }}', safety_score: {{ d.safety_score }}, status: '{{ d.status }}'})" class="text-slate-400 hover:text-blue-500 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                {% if d.status != 'Suspended' %}
+                                <button onclick="triggerSuspend({{ d.id }})" class="text-slate-400 hover:text-amber-500 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
+                                {% endif %}
+                                <button onclick="triggerDelete({{ d.id }})" class="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-400">No driver records matched.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'partials/pagination.html' %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- 3. ADD DRIVER MODAL -->
+<div id="create-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeCreateModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Create Driver Profile</h3>
+        
+        <form method="POST" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Driver Name</label>
+                    <input type="text" name="name" required placeholder="Johnathan Doe" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Contact Phone</label>
+                    <input type="text" name="phone" required placeholder="+1 (555) 123-4567" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">CDL License Number</label>
+                    <input type="text" name="license_number" required placeholder="DL-1099238M" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">License Category</label>
+                    <select name="license_category" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        <option value="Class A CDL">Class A CDL</option>
+                        <option value="Class B CDL">Class B CDL</option>
+                        <option value="Class C CDL">Class C CDL</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">License Expiry</label>
+                    <input type="date" name="license_expiry" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Initial Safety Score</label>
+                    <input type="number" name="safety_score" min="1" max="100" value="95" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Operational Status</label>
+                <select name="status" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                    <option value="Active">Active (Available)</option>
+                    <option value="On Duty">On Duty (Driving)</option>
+                    <option value="Suspended">Suspended</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeCreateModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2">Create Profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. EDIT DRIVER MODAL -->
+<div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeEditModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Edit Driver Profile</h3>
+        
+        <form method="POST" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" id="edit-id">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Driver Name</label>
+                    <input type="text" name="name" id="edit-name" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Phone Contact</label>
+                    <input type="text" name="phone" id="edit-phone" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">CDL License Number</label>
+                    <input type="text" name="license_number" id="edit-license" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">License Category</label>
+                    <select name="license_category" id="edit-category" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                        <option value="Class A CDL">Class A CDL</option>
+                        <option value="Class B CDL">Class B CDL</option>
+                        <option value="Class C CDL">Class C CDL</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">License Expiry</label>
+                    <input type="date" name="license_expiry" id="edit-expiry" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Safety Score</label>
+                    <input type="number" name="safety_score" id="edit-score" min="1" max="100" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Operational Status</label>
+                <select name="status" id="edit-status" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                    <option value="Active">Active</option>
+                    <option value="On Duty">On Duty</option>
+                    <option value="Suspended">Suspended</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeEditModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2">Save Profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 5. SUSPEND & DELETE ACTION FORMS -->
+<form id="suspend-form" method="POST" action="{% url 'drivers' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="suspend">
+    <input type="hidden" name="id" id="suspend-id">
+</form>
+
+<form id="delete-form" method="POST" action="{% url 'drivers' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="id" id="delete-id">
+</form>
+
+<!-- 6. DRIVER PROFILE DETAILS DRAWER & TIMELINE -->
+<div id="driver-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col justify-between">
+    <div class="overflow-y-auto pr-1">
+        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-4 mb-6">
+            <h3 class="font-poppins text-base font-bold text-slate-800 dark:text-white font-poppins">Driver Dossier & Activity</h3>
+            <button onclick="closeDriverDrawer()" class="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+
+        <div class="space-y-6 text-xs text-slate-500 dark:text-slate-400">
+            <!-- Profile Info -->
+            <div class="flex items-center space-x-4">
+                <div class="h-16 w-16 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand text-2xl font-extrabold" id="drawer-avatar">
+                    MV
+                </div>
+                <div>
+                    <h4 id="drawer-name" class="text-base font-extrabold text-slate-900 dark:text-white leading-none">Marcus Vance</h4>
+                    <p id="drawer-license" class="text-xs text-slate-400 mt-1">CDL: DL-9082319A</p>
+                    <p id="drawer-phone" class="text-xs text-slate-400 mt-0.5">+1 (555) 234-5678</p>
+                </div>
+            </div>
+
+            <!-- Stats Block -->
+            <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl">
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Safety Rank</span>
+                    <span id="drawer-score" class="font-extrabold text-sm text-green-500">94%</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">CDL Category</span>
+                    <span id="drawer-category" class="font-bold text-slate-800 dark:text-slate-200">Class A CDL</span>
+                </div>
+            </div>
+
+            <!-- Custom Interactive Activity Timeline -->
+            <div class="space-y-4">
+                <h5 class="font-poppins font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[10px] border-b border-slate-100 dark:border-slate-800 pb-1">Activity Log Timeline</h5>
+                <ol class="relative border-l border-slate-200 dark:border-slate-800 space-y-4 ml-2">
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1.5 flex h-2.5 w-2.5 rounded-full bg-blue-500"></span>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">07:30 AM</span>
+                            <span class="text-[10px] text-slate-400">Terminal Log</span>
+                        </div>
+                        <p class="text-slate-400 mt-0.5">Assigned to Volvo FH16 Flatbed. Conducted vehicle pre-trip inspection.</p>
+                    </li>
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1.5 flex h-2.5 w-2.5 rounded-full bg-brand"></span>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">08:00 AM</span>
+                            <span class="text-[10px] text-slate-400">Dispatch Start</span>
+                        </div>
+                        <p class="text-slate-400 mt-0.5">Dispatched on Trip #1: Houston Hub to Dallas Distribution (Distance 240.5 km).</p>
+                    </li>
+                    <li class="relative pl-6">
+                        <span class="absolute left-[-5px] top-1.5 flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">11:30 AM</span>
+                            <span class="text-[10px] text-slate-400">Trip Complete</span>
+                        </div>
+                        <p class="text-slate-400 mt-0.5">Arrived at destination. Signed off manifest digital delivery. Status: Idle.</p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-4 border-t border-slate-150 dark:border-slate-800 mt-4">
+        <button onclick="closeDriverDrawer()" class="w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold py-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Close Dossier</button>
+    </div>
+</div>
+
+<script>
+    // Create Modal
+    function openCreateModal() {
+        const modal = document.getElementById('create-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeCreateModal() {
+        const modal = document.getElementById('create-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Edit Modal
+    function openEditModal(dData) {
+        document.getElementById('edit-id').value = dData.id;
+        document.getElementById('edit-name').value = dData.name;
+        document.getElementById('edit-phone').value = dData.phone;
+        document.getElementById('edit-license').value = dData.license_number;
+        document.getElementById('edit-category').value = dData.license_category;
+        document.getElementById('edit-expiry').value = dData.license_expiry;
+        document.getElementById('edit-score').value = dData.safety_score;
+        document.getElementById('edit-status').value = dData.status;
+
+        const modal = document.getElementById('edit-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeEditModal() {
+        const modal = document.getElementById('edit-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Suspend Driver
+    function triggerSuspend(id) {
+        if(confirm("Are you sure you want to suspend this driver? Suspended drivers cannot be assigned to active dispatches.")) {
+            document.getElementById('suspend-id').value = id;
+            document.getElementById('suspend-form').submit();
+        }
+    }
+
+    // Delete Driver
+    function triggerDelete(id) {
+        if(confirm("Confirm deletion of driver profile? This action is irreversible.")) {
+            document.getElementById('delete-id').value = id;
+            document.getElementById('delete-form').submit();
+        }
+    }
+
+    // Open Driver Drawer
+    function openDriverDrawer(dData) {
+        document.getElementById('drawer-name').innerText = dData.name;
+        document.getElementById('drawer-avatar').innerText = dData.name.split(' ').map(x=>x[0]).join('');
+        document.getElementById('drawer-license').innerText = 'CDL: ' + dData.license_number;
+        document.getElementById('drawer-phone').innerText = dData.phone;
+        document.getElementById('drawer-category').innerText = dData.license_category;
+        
+        const scoreSpan = document.getElementById('drawer-score');
+        scoreSpan.innerText = dData.safety_score + '%';
+        scoreSpan.className = "font-extrabold text-sm ";
+        if(dData.safety_score >= 90) scoreSpan.classList.add('text-green-500');
+        else if(dData.safety_score >= 80) scoreSpan.classList.add('text-amber-500');
+        else scoreSpan.classList.add('text-red-500');
+
+        const drawer = document.getElementById('driver-drawer');
+        drawer.classList.remove('translate-x-full');
+    }
+    
+    function closeDriverDrawer() {
+        document.getElementById('driver-drawer').classList.add('translate-x-full');
+    }
+
+    // Auto-open modal if URL contains action=open_create
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'open_create') {
+            openCreateModal();
+        }
+    });
+</script>
+{% endblock %}

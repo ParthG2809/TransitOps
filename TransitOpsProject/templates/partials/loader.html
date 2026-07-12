@@ -1,0 +1,132 @@
+<div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 transition-all duration-500 ease-out select-none">
+    <!-- Glowing background blur effects -->
+    <div class="absolute w-[500px] h-[500px] rounded-full bg-brand/10 blur-[100px] -top-20 -left-20 animate-pulse"></div>
+    <div class="absolute w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-[120px] -bottom-20 -right-20 animate-pulse" style="animation-delay: 2s;"></div>
+
+    <div class="flex flex-col items-center space-y-8 relative z-10 max-w-sm px-6 text-center">
+        <!-- Animated Brand Logo -->
+        <div class="relative flex items-center justify-center h-24 w-24 rounded-2xl bg-gradient-to-tr from-brand to-amber-400 text-slate-950 shadow-2xl shadow-brand/20 animate-bounce">
+            <svg class="h-12 w-12 transform rotate-45 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            <!-- Glowing Orbiting Dots -->
+            <div class="absolute -inset-1 rounded-2xl border border-brand/50 animate-ping" style="animation-duration: 2.5s;"></div>
+        </div>
+
+        <!-- App Name -->
+        <div class="space-y-2">
+            <h1 class="font-poppins text-3xl font-extrabold tracking-widest text-white">
+                TRANSIT<span class="text-brand">OPS</span>
+            </h1>
+            <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 font-medium">
+                Enterprise Smart Fleet Platform
+            </p>
+        </div>
+
+        <!-- Custom animated progress indicator -->
+        <div class="w-64 space-y-2 pt-4">
+            <div class="h-1 w-full bg-slate-800 rounded-full overflow-hidden relative">
+                <div id="loader-progress-bar" class="absolute top-0 bottom-0 left-0 w-0 bg-gradient-to-r from-brand to-amber-400 transition-all duration-200 ease-out rounded-full shadow-[0_0_8px_#f59e0b]"></div>
+            </div>
+            <div class="flex justify-between items-center text-[10px] font-mono text-slate-500">
+                <span id="loader-status">Initializing...</span>
+                <span id="loader-percent">0%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const progressBar = document.getElementById('loader-progress-bar');
+        const statusText = document.getElementById('loader-status');
+        const percentText = document.getElementById('loader-percent');
+        const loader = document.getElementById('global-loader');
+
+        const bootPhases = [
+            { pct: 20, status: "Connecting..." },
+            { pct: 45, status: "Syncing Session..." },
+            { pct: 75, status: "Loading Dashboard..." },
+            { pct: 95, status: "Authenticating..." },
+            { pct: 100, status: "Ready" }
+        ];
+
+        let phaseIndex = 0;
+        let currentPct = 0;
+        let isFullyLoaded = false;
+        let intervalId = null;
+        let finished = false;
+
+        function finishLoader() {
+            if (finished) return;
+            finished = true;
+            
+            if (intervalId) clearInterval(intervalId);
+            progressBar.style.width = "100%";
+            percentText.innerText = "100%";
+            statusText.innerText = "Ready";
+            
+            setTimeout(() => {
+                if (loader) {
+                    loader.classList.add('opacity-0', 'scale-105');
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                    }, 500);
+                }
+            }, 100);
+        }
+
+        function runLoader() {
+            if (isFullyLoaded || finished) {
+                finishLoader();
+                return;
+            }
+
+            if (phaseIndex >= bootPhases.length) {
+                finishLoader();
+                return;
+            }
+
+            const target = bootPhases[phaseIndex];
+            statusText.innerText = target.status;
+            
+            intervalId = setInterval(() => {
+                if (isFullyLoaded || finished) {
+                    finishLoader();
+                    return;
+                }
+
+                if (currentPct < target.pct) {
+                    currentPct += 6 + Math.floor(Math.random() * 10);
+                    if (currentPct > target.pct) currentPct = target.pct;
+                    progressBar.style.width = currentPct + "%";
+                    percentText.innerText = currentPct + "%";
+                } else {
+                    clearInterval(intervalId);
+                    phaseIndex++;
+                    setTimeout(runLoader, 15);
+                }
+            }, 8);
+        }
+
+        // Handle page load event
+        if (document.readyState === 'complete') {
+            isFullyLoaded = true;
+            finishLoader();
+        } else {
+            window.addEventListener('load', () => {
+                isFullyLoaded = true;
+                finishLoader();
+            });
+        }
+
+        // Start loader immediately
+        runLoader();
+
+        // Fallback safety timeout (max 1 second)
+        setTimeout(() => {
+            isFullyLoaded = true;
+            finishLoader();
+        }, 1000);
+    })();
+</script>

@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+
+{% block title %}Vehicle Registry | TransitOps ERP{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
+            <h1 class="font-poppins text-2xl font-bold tracking-tight">Vehicle Registry</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage and track company vehicles, lifecycles, and odometers.</p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-2">
+            <button onclick="openCreateModal()" class="inline-flex items-center rounded-xl bg-brand hover:bg-brand-dark text-slate-950 font-bold px-4 py-2.5 text-xs transition-colors shadow-md shadow-brand/10">
+                <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Register Vehicle
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & View Switcher Bar -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm transition-colors">
+        <!-- Search and Status Filters -->
+        <form method="GET" class="flex flex-wrap items-center gap-2 flex-1 max-w-2xl">
+            <input type="hidden" name="view" value="{{ view_mode }}">
+            <div class="relative w-64">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search ID, name, or model..." 
+                       class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+            </div>
+            
+            <select name="status" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-xs px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none">
+                <option value="">All Statuses</option>
+                {% for st in statuses %}
+                    <option value="{{ st }}" {% if st == status_filter %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+            </select>
+            
+            {% if q or status_filter %}
+            <a href="{% url 'vehicles' %}?view={{ view_mode }}" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold px-2">Clear Filters</a>
+            {% endif %}
+        </form>
+
+        <!-- View Mode Switcher Buttons -->
+        <div class="flex items-center space-x-1 rounded-xl p-1 bg-slate-100 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/50">
+            <a href="?view=table{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+               class="rounded-lg p-2 text-xs font-semibold flex items-center {% if view_mode == 'table' %}bg-brand text-slate-950{% else %}text-slate-400 hover:text-slate-200{% endif %} transition-colors" title="Table View">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </a>
+            <a href="?view=card{% if q %}&q={{ q }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+               class="rounded-lg p-2 text-xs font-semibold flex items-center {% if view_mode == 'card' %}bg-brand text-slate-950{% else %}text-slate-400 hover:text-slate-200{% endif %} transition-colors" title="Card View">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- 1. VIEW CONFIGURATION -->
+    {% if view_mode == 'card' %}
+    <!-- CARD GRID VIEW -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for v in vehicles %}
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold font-poppins text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                        {{ v.registration_number }}
+                    </span>
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
+                        {% if v.status == 'Available' %}bg-green-500/10 text-green-500
+                        {% elif v.status == 'On Trip' %}bg-blue-500/10 text-blue-500
+                        {% elif v.status == 'In Shop' %}bg-brand/10 text-brand
+                        {% else %}bg-red-500/10 text-red-500{% endif %}">
+                        {{ v.status }}
+                    </span>
+                </div>
+                <h3 class="font-poppins text-base font-bold text-slate-800 dark:text-white group-hover:text-brand transition-colors">{{ v.name }}</h3>
+                <p class="text-xs text-slate-400 mt-1">{{ v.model }} • {{ v.type }}</p>
+                
+                <div class="grid grid-cols-2 gap-4 mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Capacity</span>
+                        <span class="font-bold text-slate-850 dark:text-slate-200">{{ v.capacity }}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Odometer</span>
+                        <span class="font-bold text-slate-850 dark:text-slate-200">{{ v.odometer|stringformat:"d" }} km</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card actions -->
+            <div class="flex items-center justify-between border-t border-slate-105 dark:border-slate-800/80 mt-6 pt-4">
+                <button onclick="openDetailsDrawer({id: '{{ v.id }}', registration_number: '{{ v.registration_number }}', name: '{{ v.name }}', model: '{{ v.model }}', type: '{{ v.type }}', capacity: '{{ v.capacity }}', cost: {{ v.cost }}, odometer: {{ v.odometer }}, status: '{{ v.status }}'})" class="text-xs font-bold text-brand hover:text-brand-light transition-colors">
+                    View Logs
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openEditModal({id: '{{ v.id }}', registration_number: '{{ v.registration_number }}', name: '{{ v.name }}', model: '{{ v.model }}', type: '{{ v.type }}', capacity: '{{ v.capacity }}', cost: {{ v.cost }}, odometer: {{ v.odometer }}, status: '{{ v.status }}'})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded-lg hover:bg-blue-500/5 transition-colors">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button onclick="triggerDelete({{ v.id }})" class="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-500/5 transition-colors">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-12 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+            No registered vehicles matching filters.
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- ENTERPRISE DATA TABLE VIEW -->
+    <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-wider">
+                        <th class="px-6 py-3.5">Plate Number</th>
+                        <th class="px-6 py-3.5">Vehicle Details</th>
+                        <th class="px-6 py-3.5">Type & Model</th>
+                        <th class="px-6 py-3.5">Current Odometer</th>
+                        <th class="px-6 py-3.5">Acquisition Cost</th>
+                        <th class="px-6 py-3.5">Status</th>
+                        <th class="px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                    {% for v in vehicles %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ v.registration_number }}</td>
+                        <td class="px-6 py-4">
+                            <span class="font-bold text-slate-800 dark:text-slate-200 block text-xs cursor-pointer hover:text-brand" onclick="openDetailsDrawer({id: '{{ v.id }}', registration_number: '{{ v.registration_number }}', name: '{{ v.name }}', model: '{{ v.model }}', type: '{{ v.type }}', capacity: '{{ v.capacity }}', cost: {{ v.cost }}, odometer: {{ v.odometer }}, status: '{{ v.status }}'})">{{ v.name }}</span>
+                            <span class="text-[10px] text-slate-400">ID: #{{ v.id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="block">{{ v.type }}</span>
+                            <span class="text-[10px] text-slate-400">{{ v.model }}</span>
+                        </td>
+                        <td class="px-6 py-4">{{ v.odometer|stringformat:"d" }} km</td>
+                        <td class="px-6 py-4">${{ v.cost|stringformat:".2f" }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
+                                {% if v.status == 'Available' %}bg-green-500/10 text-green-500
+                                {% elif v.status == 'On Trip' %}bg-blue-500/10 text-blue-500
+                                {% elif v.status == 'In Shop' %}bg-brand/10 text-brand
+                                {% else %}bg-red-500/10 text-red-500{% endif %}">
+                                {{ v.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end space-x-1.5">
+                                <button onclick="openDetailsDrawer({id: '{{ v.id }}', registration_number: '{{ v.registration_number }}', name: '{{ v.name }}', model: '{{ v.model }}', type: '{{ v.type }}', capacity: '{{ v.capacity }}', cost: {{ v.cost }}, odometer: {{ v.odometer }}, status: '{{ v.status }}'})" class="text-xs text-brand font-bold hover:text-brand-light transition-colors px-1.5 py-1">View</button>
+                                <button onclick="openEditModal({id: '{{ v.id }}', registration_number: '{{ v.registration_number }}', name: '{{ v.name }}', model: '{{ v.model }}', type: '{{ v.type }}', capacity: '{{ v.capacity }}', cost: {{ v.cost }}, odometer: {{ v.odometer }}, status: '{{ v.status }}'})" class="text-slate-400 hover:text-blue-500 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-850"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                <button onclick="triggerDelete({{ v.id }})" class="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-400">No vehicles matching active query.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'partials/pagination.html' %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- 2. CREATE VEHICLE MODAL -->
+<div id="create-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeCreateModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Register New Fleet Asset</h3>
+        
+        <form method="POST" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Plate Number</label>
+                    <input type="text" name="registration_number" required placeholder="TX-9900-GP" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Asset Name</label>
+                    <input type="text" name="name" required placeholder="Scania Flatbed" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Model</label>
+                    <input type="text" name="model" required placeholder="R450 - 2022" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Vehicle Type</label>
+                    <input type="text" name="type" required placeholder="Heavy Duty Truck" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Max Capacity</label>
+                    <input type="text" name="capacity" required placeholder="32,000 kg" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cost ($)</label>
+                    <input type="number" name="cost" step="0.01" required placeholder="140000" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Odometer (km)</label>
+                    <input type="number" name="odometer" required placeholder="12000" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                </div>
+            </div>
+
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Initial Status</label>
+                <select name="status" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
+                    <option value="Available">Available</option>
+                    <option value="On Trip">On Trip</option>
+                    <option value="In Shop">In Shop</option>
+                    <option value="Retired">Retired</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeCreateModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2">Add Asset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. EDIT VEHICLE MODAL -->
+<div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all transform scale-95 opacity-0 duration-350">
+        <button onclick="closeEditModal()" class="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        <h3 class="font-poppins text-lg font-bold text-slate-900 dark:text-white mb-4">Edit Vehicle Record</h3>
+        
+        <form method="POST" class="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" id="edit-id">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Plate Number</label>
+                    <input type="text" name="registration_number" id="edit-reg" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Asset Name</label>
+                    <input type="text" name="name" id="edit-name" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Model</label>
+                    <input type="text" name="model" id="edit-model" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Vehicle Type</label>
+                    <input type="text" name="type" id="edit-type" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Max Capacity</label>
+                    <input type="text" name="capacity" id="edit-capacity" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cost ($)</label>
+                    <input type="number" name="cost" id="edit-cost" step="0.01" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Odometer (km)</label>
+                    <input type="number" name="odometer" id="edit-odometer" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block mb-1 text-slate-400 uppercase tracking-wider">Asset Status</label>
+                <select name="status" id="edit-status" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                    <option value="Available">Available</option>
+                    <option value="On Trip">On Trip</option>
+                    <option value="In Shop">In Shop</option>
+                    <option value="Retired">Retired</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4">
+                <button type="button" onclick="closeEditModal()" class="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                <button type="submit" class="rounded-xl bg-brand text-slate-950 font-bold px-4 py-2">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. DELETE CONFIRMATION FORM -->
+<form id="delete-form" method="POST" action="{% url 'vehicles' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="id" id="delete-id">
+</form>
+
+<!-- 5. VEHICLE DETAILS DRAWER -->
+<div id="details-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col justify-between">
+    <div>
+        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-4 mb-6">
+            <h3 class="font-poppins text-base font-bold text-slate-800 dark:text-white">Vehicle Operations Detail</h3>
+            <button onclick="closeDetailsDrawer()" class="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800"><svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+
+        <div class="space-y-6 text-xs text-slate-500 dark:text-slate-400">
+            <!-- Basic Details -->
+            <div>
+                <h4 id="drawer-name" class="text-base font-extrabold text-slate-900 dark:text-white leading-none">Vehicle Name</h4>
+                <p id="drawer-reg" class="text-xs text-brand font-semibold mt-1">TX-9088-GP</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl">
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Type</span>
+                    <span id="drawer-type" class="font-bold text-slate-800 dark:text-slate-200">Heavy Truck</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Model</span>
+                    <span id="drawer-model" class="font-bold text-slate-800 dark:text-slate-200">2022</span>
+                </div>
+            </div>
+
+            <!-- Operational Metrics -->
+            <div class="space-y-3">
+                <h5 class="font-poppins font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[10px] border-b border-slate-100 dark:border-slate-800 pb-1">Lifecycle Metrics</h5>
+                <div class="flex justify-between">
+                    <span>Odometer</span>
+                    <span class="font-bold text-slate-850 dark:text-slate-200" id="drawer-odometer">12,000 km</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Max Capacity</span>
+                    <span class="font-bold text-slate-850 dark:text-slate-200" id="drawer-capacity">32,000 kg</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Acquisition Value</span>
+                    <span class="font-bold text-slate-850 dark:text-slate-200" id="drawer-cost">$145,000.00</span>
+                </div>
+            </div>
+
+            <!-- Operational Status progress indicator -->
+            <div class="space-y-2">
+                <h5 class="font-poppins font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[10px]">Status Matrix</h5>
+                <div class="flex items-center space-x-2">
+                    <span id="drawer-status-chip" class="inline-flex rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider text-[10px]">Available</span>
+                    <span class="text-[10px] text-slate-400">Ready for active dispatch</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-4 border-t border-slate-150 dark:border-slate-800">
+        <button onclick="closeDetailsDrawer()" class="w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold py-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Close View Drawer</button>
+    </div>
+</div>
+
+<script>
+    // Create Modal Logic
+    function openCreateModal() {
+        const modal = document.getElementById('create-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeCreateModal() {
+        const modal = document.getElementById('create-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Edit Modal Logic
+    function openEditModal(vData) {
+        document.getElementById('edit-id').value = vData.id;
+        document.getElementById('edit-reg').value = vData.registration_number;
+        document.getElementById('edit-name').value = vData.name;
+        document.getElementById('edit-model').value = vData.model;
+        document.getElementById('edit-type').value = vData.type;
+        document.getElementById('edit-capacity').value = vData.capacity;
+        document.getElementById('edit-cost').value = vData.cost;
+        document.getElementById('edit-odometer').value = vData.odometer;
+        document.getElementById('edit-status').value = vData.status;
+
+        const modal = document.getElementById('edit-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.relative').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.relative').classList.add('scale-100', 'opacity-100');
+        }, 50);
+    }
+    function closeEditModal() {
+        const modal = document.getElementById('edit-modal');
+        const content = modal.querySelector('.relative');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    // Delete Logic
+    function triggerDelete(id) {
+        if(confirm("Are you sure you want to retire and delete this vehicle from operational registry?")) {
+            document.getElementById('delete-id').value = id;
+            document.getElementById('delete-form').submit();
+        }
+    }
+
+    // Details Drawer Logic
+    function openDetailsDrawer(vData) {
+        document.getElementById('drawer-name').innerText = vData.name;
+        document.getElementById('drawer-reg').innerText = vData.registration_number;
+        document.getElementById('drawer-type').innerText = vData.type;
+        document.getElementById('drawer-model').innerText = vData.model;
+        document.getElementById('drawer-odometer').innerText = vData.odometer.toLocaleString() + ' km';
+        document.getElementById('drawer-capacity').innerText = vData.capacity;
+        document.getElementById('drawer-cost').innerText = '$' + vData.cost.toLocaleString(undefined, {minimumFractionDigits: 2});
+        
+        // Chip color update
+        const chip = document.getElementById('drawer-status-chip');
+        chip.innerText = vData.status;
+        chip.className = "inline-flex rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider text-[10px] ";
+        if (vData.status === 'Available') {
+            chip.classList.add('bg-green-500/10', 'text-green-500');
+        } else if (vData.status === 'On Trip') {
+            chip.classList.add('bg-blue-500/10', 'text-blue-500');
+        } else if (vData.status === 'In Shop') {
+            chip.classList.add('bg-brand/10', 'text-brand');
+        } else {
+            chip.classList.add('bg-red-500/10', 'text-red-500');
+        }
+
+        const drawer = document.getElementById('details-drawer');
+        drawer.classList.remove('translate-x-full');
+    }
+    
+    function closeDetailsDrawer() {
+        document.getElementById('details-drawer').classList.add('translate-x-full');
+    }
+
+    // Auto open register modal if URL query has action=open_create
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'open_create') {
+            openCreateModal();
+        }
+    });
+</script>
+{% endblock %}

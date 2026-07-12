@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" class="{% if theme == 'dark' %}dark{% endif %} h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TransitOps – Smart Transport Operations Platform{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#fbbf24',
+                            DEFAULT: '#f59e0b', // Primary Orange
+                            dark: '#d97706',
+                        },
+                        slate: {
+                            850: '#1e293b', // Custom slate-850 for dark mode borders and hovers
+                            950: '#0b0f19', // Premium deep dark theme bg
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Styles for Scrollbar, Transitions, and Custom Animations -->
+    <style>
+        /* Custom scrollbar styling for premium look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Smooth transitions for theme toggle & layout changes */
+        .theme-transition {
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+        }
+        
+        /* Loading skeleton pulse and fade */
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950 theme-transition overflow-hidden flex flex-col">
+    
+    <!-- Global Loader -->
+    {% include 'partials/loader.html' %}
+
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <!-- Sidebar Navigation -->
+        {% include 'partials/sidebar.html' %}
+
+        <!-- Main Workspace Area -->
+        <div id="main-content" class="flex-1 flex flex-col min-w-0 overflow-hidden theme-transition">
+            
+            <!-- Navbar Header -->
+            {% include 'partials/navbar.html' %}
+
+            <!-- Scrollable Content Viewport -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 relative">
+                
+                <!-- Flash Messages -->
+                {% include 'partials/flash_messages.html' %}
+                
+                <!-- Breadcrumbs -->
+                {% include 'partials/breadcrumb.html' %}
+
+                <!-- Main Content Slot -->
+                {% block content %}
+                {% endblock %}
+                
+                <!-- Footer partial -->
+                {% include 'partials/footer.html' %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Collapsible Sidebar & Theme Toggle Script -->
+    <script>
+        // Sidebar logic
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+        const mobileToggleBtn = document.getElementById('mobile-sidebar-toggle');
+        
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebar.classList.toggle('md:w-64');
+            sidebar.classList.toggle('md:w-20');
+            
+            // Toggle label visibility
+            const labels = sidebar.querySelectorAll('.sidebar-label');
+            labels.forEach(l => l.classList.toggle('md:hidden'));
+            
+            // Toggle project brand details
+            const brandText = document.getElementById('brand-text');
+            if (brandText) brandText.classList.toggle('md:hidden');
+            
+            // Adjust margin/width of content
+            mainContent.classList.toggle('md:pl-0');
+        }
+
+        if (toggleSidebarBtn) {
+            toggleSidebarBtn.addEventListener('click', toggleSidebar);
+        }
+        if (mobileToggleBtn) {
+            mobileToggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        }
+
+        // Close sidebar on mobile clicking outside
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 768) {
+                if (!sidebar.contains(e.target) && !mobileToggleBtn.contains(e.target) && !sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
+        });
+    </script>
+    
+    <!-- Additional page-specific scripts -->
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>
