@@ -144,7 +144,7 @@
                             <span class="text-[10px] text-slate-400">{{ v.model }}</span>
                         </td>
                         <td class="px-6 py-4">{{ v.odometer|stringformat:"d" }} km</td>
-                        <td class="px-6 py-4">${{ v.cost|stringformat:".2f" }}</td>
+                        <td class="px-6 py-4">₹{{ v.cost|stringformat:".2f" }}</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide
                                 {% if v.status == 'Available' %}bg-green-500/10 text-green-500
@@ -214,7 +214,7 @@
                     <input type="text" name="capacity" required placeholder="32,000 kg" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
                 </div>
                 <div>
-                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cost ($)</label>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cost (₹)</label>
                     <input type="number" name="cost" step="0.01" required placeholder="140000" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-brand">
                 </div>
                 <div>
@@ -280,7 +280,7 @@
                     <input type="text" name="capacity" id="edit-capacity" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cost ($)</label>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Cost (₹)</label>
                     <input type="number" name="cost" id="edit-cost" step="0.01" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
                 </div>
                 <div>
@@ -353,7 +353,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span>Acquisition Value</span>
-                    <span class="font-bold text-slate-850 dark:text-slate-200" id="drawer-cost">$145,000.00</span>
+                    <span class="font-bold text-slate-850 dark:text-slate-200" id="drawer-cost">₹145,000.00</span>
                 </div>
             </div>
 
@@ -434,7 +434,7 @@
         document.getElementById('drawer-model').innerText = vData.model;
         document.getElementById('drawer-odometer').innerText = vData.odometer.toLocaleString() + ' km';
         document.getElementById('drawer-capacity').innerText = vData.capacity;
-        document.getElementById('drawer-cost').innerText = '$' + vData.cost.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('drawer-cost').innerText = '₹' + vData.cost.toLocaleString(undefined, {minimumFractionDigits: 2});
         
         // Chip color update
         const chip = document.getElementById('drawer-status-chip');

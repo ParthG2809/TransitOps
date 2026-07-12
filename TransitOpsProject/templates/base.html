@@ -79,6 +79,24 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+        
+        /* Collapsed Sidebar Alignment and Centering */
+        #sidebar.md\:w-20 nav a {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        #sidebar.md\:w-20 nav a svg {
+            margin-right: 0 !important;
+        }
+        #sidebar.md\:w-20 .flex.h-16 {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        #sidebar.md\:w-20 div.border-t {
+            display: none;
+        }
     </style>
 </head>
 <body class="h-full font-sans antialiased text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950 theme-transition overflow-hidden flex flex-col">

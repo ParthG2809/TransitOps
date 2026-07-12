@@ -10,7 +10,7 @@
     <div class="p-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-500 text-xs font-semibold flex items-center space-x-3">
         <svg class="h-5 w-5 shrink-0 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         <div>
-            <span class="font-extrabold uppercase">Compliance Warning:</span> {{ expiry_warnings }} driver(s) have CDL license credentials expiring within 30 days or expired. Action required.
+            <span class="font-extrabold uppercase">Compliance Warning:</span> {{ expiry_warnings }} driver(s) have DL license credentials expiring within 30 days or expired. Action required.
         </div>
     </div>
     {% endif %}
@@ -34,7 +34,7 @@
         <form method="GET" class="flex flex-wrap items-center gap-2 flex-1 max-w-2xl">
             <input type="hidden" name="view" value="{{ view_mode }}">
             <div class="relative w-64">
-                <input type="text" name="q" value="{{ q }}" placeholder="Search driver name or CDL ID..." 
+                <input type="text" name="q" value="{{ q }}" placeholder="Search driver name or DL number..." 
                        class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -95,7 +95,7 @@
                             class="font-poppins text-sm font-bold text-slate-800 dark:text-white group-hover:text-brand cursor-pointer transition-colors leading-none">
                             {{ d.name }}
                         </h3>
-                        <p class="text-[10px] text-slate-400 mt-1">CDL: {{ d.license_number }}</p>
+                        <p class="text-[10px] text-slate-400 mt-1">DL: {{ d.license_number }}</p>
                     </div>
                 </div>
 
@@ -149,7 +149,7 @@
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-wider">
                         <th class="px-6 py-3.5">Name</th>
-                        <th class="px-6 py-3.5">CDL Credentials</th>
+                        <th class="px-6 py-3.5">DL Credentials</th>
                         <th class="px-6 py-3.5">License Expiry</th>
                         <th class="px-6 py-3.5">Phone Contact</th>
                         <th class="px-6 py-3.5">Safety Rating</th>
@@ -232,15 +232,15 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">CDL License Number</label>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Driving License (DL) Number</label>
                     <input type="text" name="license_number" required placeholder="DL-1099238M" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
                 </div>
                 <div>
                     <label class="block mb-1 text-slate-400 uppercase tracking-wider">License Category</label>
                     <select name="license_category" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
-                        <option value="Class A CDL">Class A CDL</option>
-                        <option value="Class B CDL">Class B CDL</option>
-                        <option value="Class C CDL">Class C CDL</option>
+                        <option value="Heavy Motor Vehicle (HMV)">Heavy Motor Vehicle (HMV)</option>
+                        <option value="Light Motor Vehicle (LMV)">Light Motor Vehicle (LMV)</option>
+                        <option value="Motorcycle (MCWG)">Motorcycle (MCWG)</option>
                     </select>
                 </div>
             </div>
@@ -253,6 +253,17 @@
                 <div>
                     <label class="block mb-1 text-slate-400 uppercase tracking-wider">Initial Safety Score</label>
                     <input type="number" name="safety_score" min="1" max="100" value="95" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Email Address</label>
+                    <input type="email" name="email" required placeholder="driver@transitops.in" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Temporary Password</label>
+                    <input type="password" name="temporary_password" required placeholder="••••••••" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
                 </div>
             </div>
 
@@ -297,15 +308,15 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">CDL License Number</label>
+                    <label class="block mb-1 text-slate-400 uppercase tracking-wider">Driving License (DL) Number</label>
                     <input type="text" name="license_number" id="edit-license" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
                 </div>
                 <div>
                     <label class="block mb-1 text-slate-400 uppercase tracking-wider">License Category</label>
                     <select name="license_category" id="edit-category" class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
-                        <option value="Class A CDL">Class A CDL</option>
-                        <option value="Class B CDL">Class B CDL</option>
-                        <option value="Class C CDL">Class C CDL</option>
+                        <option value="Heavy Motor Vehicle (HMV)">Heavy Motor Vehicle (HMV)</option>
+                        <option value="Light Motor Vehicle (LMV)">Light Motor Vehicle (LMV)</option>
+                        <option value="Motorcycle (MCWG)">Motorcycle (MCWG)</option>
                     </select>
                 </div>
             </div>
@@ -367,7 +378,7 @@
                 </div>
                 <div>
                     <h4 id="drawer-name" class="text-base font-extrabold text-slate-900 dark:text-white leading-none">Marcus Vance</h4>
-                    <p id="drawer-license" class="text-xs text-slate-400 mt-1">CDL: DL-9082319A</p>
+                    <p id="drawer-license" class="text-xs text-slate-400 mt-1">DL: DL-9082319A</p>
                     <p id="drawer-phone" class="text-xs text-slate-400 mt-0.5">+1 (555) 234-5678</p>
                 </div>
             </div>
@@ -379,8 +390,8 @@
                     <span id="drawer-score" class="font-extrabold text-sm text-green-500">94%</span>
                 </div>
                 <div>
-                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">CDL Category</span>
-                    <span id="drawer-category" class="font-bold text-slate-800 dark:text-slate-200">Class A CDL</span>
+                    <span class="block text-slate-400 font-semibold uppercase tracking-wider text-[10px]">DL Category</span>
+                    <span id="drawer-category" class="font-bold text-slate-800 dark:text-slate-200">Heavy Motor Vehicle (HMV)</span>
                 </div>
             </div>
 
@@ -486,7 +497,7 @@
     function openDriverDrawer(dData) {
         document.getElementById('drawer-name').innerText = dData.name;
         document.getElementById('drawer-avatar').innerText = dData.name.split(' ').map(x=>x[0]).join('');
-        document.getElementById('drawer-license').innerText = 'CDL: ' + dData.license_number;
+        document.getElementById('drawer-license').innerText = 'DL: ' + dData.license_number;
         document.getElementById('drawer-phone').innerText = dData.phone;
         document.getElementById('drawer-category').innerText = dData.license_category;
         

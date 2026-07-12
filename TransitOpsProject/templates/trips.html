@@ -49,10 +49,16 @@
                         <div>
                             <label class="block mb-1 text-slate-400 uppercase tracking-wider">Assign Active Driver</label>
                             <select name="driver" id="driver-select" required class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 focus:outline-none">
-                                <option value="">Select driver...</option>
-                                {% for d in available_drivers %}
-                                    <option value="{{ d.name }}">{{ d.name }} (Safety Score: {{ d.safety_score }})</option>
-                                {% endfor %}
+                                {% if current_role == 'Driver' %}
+                                    {% for d in available_drivers %}
+                                        <option value="{{ d.name }}" selected>{{ d.name }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="">Select driver...</option>
+                                    {% for d in available_drivers %}
+                                        <option value="{{ d.name }}">{{ d.name }} (Safety Score: {{ d.safety_score }})</option>
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                         </div>
                     </div>
@@ -74,9 +80,9 @@
             <!-- Dynamic compliance checks -->
             <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div class="grid grid-cols-3 gap-3 mb-4">
-                    <!-- CDL Verification Card -->
+                    <!-- DL Verification Card -->
                     <div id="check-cdl" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-center">
-                        <span class="block text-[10px] text-slate-400 uppercase font-bold">CDL License</span>
+                        <span class="block text-[10px] text-slate-400 uppercase font-bold">Driving License (DL)</span>
                         <span id="cdl-status" class="inline-block mt-1 text-[10px] font-bold text-slate-400">NOT VERIFIED</span>
                     </div>
                     <!-- Weight Limits Card -->
@@ -143,6 +149,26 @@
             <div class="relative z-10 text-[10px] text-slate-400 bg-black/40 p-3 rounded-xl border border-white/5">
                 <span class="block font-bold text-white">Estimated Logistics SLA:</span>
                 <span id="route-sla">Please input route source and destination to calculate time intervals.</span>
+            </div>
+
+            <div class="relative z-10 text-[10px] text-slate-400 bg-black/40 p-3 rounded-xl border border-white/5 mt-3 space-y-1.5">
+                <span class="block font-bold text-white uppercase tracking-wider text-[9px] text-slate-400 mb-1">Estimated Dispatch Expenses</span>
+                <div class="flex justify-between">
+                    <span>Fuel Cost (₹90/L, 4 km/L):</span>
+                    <span id="est-fuel-cost" class="font-bold text-slate-200">₹0.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Driver Allowance (₹5/km):</span>
+                    <span id="est-driver-wage" class="font-bold text-slate-200">₹0.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Tolls & Taxes (₹2/km):</span>
+                    <span id="est-tolls" class="font-bold text-slate-200">₹0.00</span>
+                </div>
+                <div class="border-t border-white/10 my-1 pt-1 flex justify-between text-brand text-xs font-bold">
+                    <span>Total Estimated Expenses:</span>
+                    <span id="est-total-cost">₹0.00</span>
+                </div>
             </div>
         </div>
 
@@ -241,9 +267,10 @@
     const cargoInput = document.getElementById('cargo-weight');
     const sourceInput = document.getElementById('route-source');
     const destInput = document.getElementById('route-dest');
+    const distanceInput = document.getElementById('distance');
 
     function updateComplianceChecks() {
-        // CDL Verification mock check
+        // DL Verification mock check
         const cdlStatus = document.getElementById('cdl-status');
         const cdlCard = document.getElementById('check-cdl');
         if(driverSelect.value) {
@@ -296,6 +323,30 @@
         } else {
             routeSla.innerText = "Please input route source and destination to calculate time intervals.";
         }
+
+        // Expenses calculations
+        const estFuelCost = document.getElementById('est-fuel-cost');
+        const estDriverWage = document.getElementById('est-driver-wage');
+        const estTolls = document.getElementById('est-tolls');
+        const estTotalCost = document.getElementById('est-total-cost');
+
+        const distance = parseFloat(distanceInput.value || 0);
+        if (distance > 0) {
+            const fuelCost = (distance / 4.0) * 90.0;
+            const driverWage = distance * 5.0;
+            const tolls = distance * 2.0;
+            const total = fuelCost + driverWage + tolls;
+
+            estFuelCost.innerText = "₹" + fuelCost.toFixed(2);
+            estDriverWage.innerText = "₹" + driverWage.toFixed(2);
+            estTolls.innerText = "₹" + tolls.toFixed(2);
+            estTotalCost.innerText = "₹" + total.toFixed(2);
+        } else {
+            estFuelCost.innerText = "₹0.00";
+            estDriverWage.innerText = "₹0.00";
+            estTolls.innerText = "₹0.00";
+            estTotalCost.innerText = "₹0.00";
+        }
     }
 
     driverSelect.addEventListener('change', updateComplianceChecks);
@@ -303,5 +354,6 @@
     cargoInput.addEventListener('input', updateComplianceChecks);
     sourceInput.addEventListener('input', updateComplianceChecks);
     destInput.addEventListener('input', updateComplianceChecks);
+    distanceInput.addEventListener('input', updateComplianceChecks);
 </script>
 {% endblock %}
