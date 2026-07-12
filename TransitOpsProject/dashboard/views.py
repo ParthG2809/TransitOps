@@ -39,12 +39,10 @@ def dashboard_view(request):
     drivers_on_duty = Driver.objects.filter(status='On Trip').count()
     active_trips = Trip.objects.filter(status='Dispatched').count()
     pending_trips = Trip.objects.filter(status='Draft').count()
-
     # Monthly OpEx (operational cost)
     maint_cost = Maintenance.objects.filter(status='Completed').aggregate(total=Sum('cost'))['total'] or 0.0
     exp_cost = Expense.objects.all().aggregate(total=Sum('amount'))['total'] or 0.0
-    operational_cost = maint_cost + exp_cost
-
+    operational_cost = float(maint_cost) + float(exp_cost)
     # Recent dispatches
     recent_trips = Trip.objects.all().order_by('-dispatch_time', '-created_at')[:3]
 

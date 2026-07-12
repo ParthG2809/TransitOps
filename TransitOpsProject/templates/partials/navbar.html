@@ -35,7 +35,7 @@
     <div class="flex items-center space-x-3 md:space-x-4">
         
         <!-- Quick Role Switcher for easy evaluation -->
-        {% if request.user.is_authenticated and request.user.role != 'Driver' and request.user.role != 'Safety Officer' %}
+        {% if request.user.is_authenticated and request.user.role == 'Admin' %}
         <form action="{% url 'switch_role' %}" method="POST" class="hidden lg:flex items-center space-x-1">
             {% csrf_token %}
             <label for="role-select" class="text-xs text-slate-400 font-medium">Switch Sandbox Role:</label>
@@ -122,7 +122,7 @@
                         Settings & Profile
                     </a>
                     <!-- Mobile only Quick Switch inside dropdown -->
-                    {% if request.user.is_authenticated and request.user.role != 'Driver' and request.user.role != 'Safety Officer' %}
+                    {% if request.user.is_authenticated and request.user.role == 'Admin' %}
                     <div class="lg:hidden border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
                         <p class="px-4 py-1 text-[10px] font-semibold text-slate-400 uppercase">Change Role</p>
                         {% for r in all_roles %}

@@ -28,10 +28,10 @@ ROLE_PERMISSIONS = {
 # Standardized allowed routes for each role matching the template sidebar checks:
 ROLE_ALLOWED_ROUTES = {
     'Admin': ['dashboard', 'fleet', 'drivers', 'trips', 'maintenance', 'expenses', 'analytics', 'settings', 'users', 'safety'],
-    'Fleet Manager': ['dashboard', 'fleet', 'trips', 'maintenance', 'analytics'], # In prompt: "Fleet Manager: Dashboard, Vehicles, Trips, Maintenance, Reports"
-    'Driver': ['dashboard', 'trips'], # In prompt: "Driver: Dashboard, My Trips, Trip History"
-    'Safety Officer': ['dashboard', 'settings', 'safety'], # In prompt: "Safety Officer: Dashboard, License Monitoring, Safety"
-    'Financial Analyst': ['dashboard', 'expenses', 'analytics'] # In prompt: "Financial Analyst: Dashboard, Fuel, Expenses, Analytics, Reports"
+    'Fleet Manager': ['dashboard', 'fleet', 'drivers', 'trips', 'maintenance', 'analytics'], 
+    'Driver': ['dashboard', 'trips'], 
+    'Safety Officer': ['dashboard', 'settings', 'safety'], 
+    'Financial Analyst': ['dashboard', 'maintenance', 'expenses', 'analytics']
 }
 
 VEHICLE_STATUS_CHOICES = [

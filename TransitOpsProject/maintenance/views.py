@@ -71,7 +71,6 @@ def maintenance_view(request):
                 messages.error(request, "Maintenance ticket not found.")
 
         return redirect('maintenance')
-
     # Get list
     q = request.GET.get('q', '').strip()
     maintenance_all = Maintenance.objects.all().order_by('-start_date')
@@ -92,8 +91,15 @@ def maintenance_view(request):
     # Vehicles dropdown (exclude retired)
     vehicles = Vehicle.objects.exclude(status='Retired')
 
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(maintenance_all, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'maintenance': maintenance_all,
+        'maintenance': page_obj,
+        'page_obj': page_obj,
         'open_jobs': open_jobs,
         'completed_jobs': completed_jobs,
         'total_maint_cost': total_maint_cost,

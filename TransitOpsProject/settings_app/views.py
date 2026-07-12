@@ -55,9 +55,9 @@ def settings_view(request):
 @login_and_password_required
 def switch_role_view(request):
     if request.method == 'POST':
-        # Block actual Drivers and Safety Officers from switching sandbox roles
-        if request.user.role in ['Driver', 'Safety Officer']:
-            messages.error(request, "Access denied. Drivers and Safety Officers are not authorized to switch sandbox roles.")
+        # Block anyone other than Admin from switching sandbox roles
+        if request.user.role != 'Admin':
+            messages.error(request, "Access denied. Only Admins are authorized to switch sandbox roles.")
             return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
         role = request.POST.get('role')

@@ -119,13 +119,12 @@ def drivers_view(request):
                 messages.error(request, "Driver not found.")
 
         return redirect('drivers')
-
     # Get list
     q = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
     view_mode = request.GET.get('view', 'cards').strip()
 
-    drivers = Driver.objects.all()
+    drivers = Driver.objects.all().order_by('-id')
     if q:
         drivers = drivers.filter(
             name__icontains=q
@@ -149,8 +148,15 @@ def drivers_view(request):
 
     statuses = ['Active', 'On Duty', 'Suspended']
 
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(drivers, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'drivers': drivers,
+        'drivers': page_obj,
+        'page_obj': page_obj,
         'q': q,
         'status_filter': status_filter,
         'statuses': statuses,
@@ -158,7 +164,6 @@ def drivers_view(request):
         'expiry_warnings': expiry_warnings
     }
     return render(request, 'drivers.html', context)
-
 
 @login_and_password_required
 @role_required(['Admin', 'Safety Officer'])

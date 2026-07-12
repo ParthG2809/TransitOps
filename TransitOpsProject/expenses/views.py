@@ -9,7 +9,7 @@ import datetime
 import re
 
 @login_and_password_required
-@role_required(['Admin', 'Financial Analyst', 'Fleet Manager'])
+@role_required(['Admin', 'Financial Analyst'])
 def expenses_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -45,7 +45,6 @@ def expenses_view(request):
                 messages.success(request, f"Expense of ₹{amount:.2f} logged successfully for {vehicle.registration_number}!")
 
         return redirect('expenses')
-
     # Get list
     q = request.GET.get('q', '').strip()
     expense_all = Expense.objects.all().order_by('-expense_date')
@@ -80,8 +79,15 @@ def expenses_view(request):
     # Vehicles dropdown (exclude retired)
     vehicles = Vehicle.objects.exclude(status='Retired')
 
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(expense_all, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'expenses': expense_all,
+        'expenses': page_obj,
+        'page_obj': page_obj,
         'total_cost': total_cost,
         'fuel_total': fuel_total,
         'maintenance_total': maintenance_total,

@@ -34,7 +34,7 @@ def trips_view(request):
             driver = Driver.objects.filter(name=driver_raw).first()
 
             # Enforce that driver role can only dispatch for themselves
-            active_role = request.session.get('user_role', 'Driver')
+            active_role = request.session.get('user_role', getattr(request.user, 'role', 'Driver'))
             if active_role == 'Driver':
                 driver_prof = Driver.objects.filter(user=request.user).first()
                 if not driver_prof:
@@ -111,7 +111,6 @@ def trips_view(request):
                 messages.error(request, "Trip manifest record not found.")
 
         return redirect('trips')
-
     # Get lists
     q = request.GET.get('q', '').strip()
     trips = Trip.objects.all().order_by('-dispatch_time')
@@ -126,7 +125,7 @@ def trips_view(request):
 
     # Restrict to Driver's own trips if current active role is Driver
     # But allow sandbox managers to see all
-    active_role = request.session.get('user_role', 'Driver')
+    active_role = request.session.get('user_role', getattr(request.user, 'role', 'Driver'))
     driver_prof = None
     if request.user.is_authenticated:
         driver_prof = Driver.objects.filter(user=request.user).first()
@@ -149,8 +148,15 @@ def trips_view(request):
     else:
         available_drivers = Driver.objects.filter(status='Available')
 
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(trips, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'trips': trips,
+        'trips': page_obj,
+        'page_obj': page_obj,
         'q': q,
         'available_vehicles': available_vehicles,
         'available_drivers': available_drivers

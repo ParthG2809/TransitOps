@@ -94,13 +94,12 @@ def vehicles_view(request):
                 messages.error(request, "Vehicle not found.")
 
         return redirect('vehicles')
-
     # Get list
     q = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
     view_mode = request.GET.get('view', 'table').strip()
 
-    vehicles = Vehicle.objects.all()
+    vehicles = Vehicle.objects.all().order_by('-id')
     if q:
         vehicles = vehicles.filter(
             registration_number__icontains=q
@@ -116,8 +115,15 @@ def vehicles_view(request):
     # dropdown/filter statuses
     statuses = ['Available', 'On Trip', 'In Shop', 'Retired']
 
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(vehicles, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'vehicles': vehicles,
+        'vehicles': page_obj,
+        'page_obj': page_obj,
         'q': q,
         'status_filter': status_filter,
         'statuses': statuses,
